@@ -7,6 +7,23 @@ public class Taxi {
     private int ancho = 50;
     private int alto = 30;
 
+    private boolean multa = false;
+    private boolean precaucion = false;
+
+    //Modificaciones
+    public void setMulta(boolean m){
+        multa = m;
+    }
+    public void setPrecaucion(boolean p){
+        precaucion = p;
+    }
+    public void reducirVelocidad(){
+        velocidad = Math.max(1, velocidad -1);
+    }
+    public void recogerCliente(){
+        System.out.println("Cliente recogido");
+    }
+
     public Taxi(int x, int y, int velocidad) {
         this.x = x;
         this.y = y;
@@ -54,3 +71,4 @@ public class Taxi {
     public int getY(){return y;}
 
 }
+
