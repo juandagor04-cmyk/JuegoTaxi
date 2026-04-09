@@ -20,7 +20,8 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
 
         taxi = new Taxi(200, 300, 5);
         mapa = new Mapa();
-        cliente = new Cliente(100, 100);
+        cliente = new Cliente(mapa.getCarrilALetatorio(), 100);
+
         senales = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
             int tipo = (int) (Math.random() * 3);
@@ -34,11 +35,17 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
 
         enemigos = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
-            enemigos.add(new CarroEnemigo(100 * i, 0, 3));
+            enemigos.add(new CarroEnemigo(mapa.getCarrilALetatorio(), 0, 3));
         }
 
         timer = new Timer(40, this);
         timer.start();
+    }
+
+    @Override
+    public void addNotify(){
+        super.addNotify();
+        requestFocusInWindow();
     }
 
     @Override
@@ -62,19 +69,27 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        int[] limites = {getWidth(), getHeight()};
+        int[] carriles = mapa.getCarriles();
 
         for (CarroEnemigo enemigo : enemigos) {
-            enemigo.mover(getWidth(), limites);
+            enemigo.mover(getHeight(), carriles);
 
             if (taxi.getBounds().intersects(enemigo.getBounds())) {
                 JOptionPane.showMessageDialog(this, "Choque!");
                 reiniciarJuego();
+                return;
             }
         }
 
         for (SenalTransito s : senales) {
             s.actualizar();
+            s.aplicarReglas(taxi);
+        }
+
+        // Recoger cliente
+        if (!cliente.fueRecogido() && taxi.getBounds().intersects(cliente.getBounds())) {
+            cliente.recoger();
+            JOptionPane.showMessageDialog(this, "Cliente recogido!");
         }
 
         repaint();
@@ -82,10 +97,35 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
 
     private void reiniciarJuego() {
         taxi = new Taxi(200, 300, 5);
+
+        mapa.generarMapa();
+
+        cliente = new Cliente(mapa.getCarrilALetatorio(), 100); // opcional pero recomendado
+
+        enemigos.clear();
+        for(int i = 0; i < 4; i++){
+            enemigos.add(new CarroEnemigo(mapa.getCarrilALetatorio(),0,3));
+        }
     }
 
     @Override
-    public void keyPressed(KeyEvent e) {}
+    public void keyPressed(KeyEvent e) {
+        int tecla  = e.getKeyCode();
+        int v = taxi.getVelocidad();
+
+        if (tecla == KeyEvent.VK_LEFT) {
+            taxi.mover(-v, 0);
+        }
+        if (tecla == KeyEvent.VK_RIGHT){
+            taxi.mover (v,0);
+        }
+        if (tecla == KeyEvent.VK_UP){
+            taxi.mover (0,-v);
+        }
+        if (tecla == KeyEvent.VK_DOWN){
+            taxi.mover (0,v);
+        }
+    }
 
     @Override
     public void keyReleased(KeyEvent e) {}

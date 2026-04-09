@@ -31,7 +31,7 @@ public class SenalTransito {
 
         //Reglamentaria
         if (tipo == REGLAMENTARIA){
-            if (tipo == SEMAFORO){
+            if (subTipo == SEMAFORO){
                 g.setColor(Color.BLACK);
                 g.fillRect(x,y,20,50);
 

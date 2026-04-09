@@ -31,18 +31,10 @@ public class Taxi {
     }
 
     //Movimiento
-    public void moverIzquierda(){
-        x -= velocidad;
-    }
-    public void moverDerecha(){
-        x += velocidad;
-    }
-    public void moverArriba(){
-        y -= velocidad;
-    }
-    public void moverAbajo(){
-        y += velocidad;
-    }
+ public void mover (int dx, int dy){
+        x += dx;
+        y += dy;
+ }
     //Limites
 
     public void limitarMovimiento(int anchoPanel, int altoPanel){
@@ -70,5 +62,8 @@ public class Taxi {
     public int getX(){return x;}
     public int getY(){return y;}
 
+    public int getVelocidad(){
+        return velocidad;
+    }
 }
 

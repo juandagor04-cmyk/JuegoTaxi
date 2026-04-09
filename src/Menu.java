@@ -17,8 +17,8 @@ public class Menu extends JFrame implements ActionListener{
         setLayout(new BorderLayout());
 
         //Titulo
-        JLabel lblTitulo = new JLabel("Bienbenido", JLabel.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        JLabel lblTitulo = new JLabel("Bienvenido", JLabel.CENTER);
+        lblTitulo.setFont(new Font("Roboto", Font.BOLD, 20));
         add(lblTitulo,BorderLayout.NORTH);
 
         //Panel Central
@@ -51,11 +51,26 @@ public class Menu extends JFrame implements ActionListener{
         String dificultad = (String) comboDificultad.getSelectedItem();
         if (nombre.isEmpty()){
             JOptionPane.showMessageDialog(this, "Ingresa tu nombre");
-        }else{
-            JOptionPane.showMessageDialog(this, "Jugador:" + nombre + "/nDificultad:" + dificultad);
+        }else {
+            JOptionPane.showMessageDialog(this,
+                    "Jugador: " + nombre + "\nDificultad: " + dificultad);
 
-            //Conexion del juego
+            //Ventana del juago
+            JFrame ventanaJuego = new JFrame("Juago Taxi");
+            PanelJuego panelJuego = new PanelJuego();
+
+            ventanaJuego.add(panelJuego);
+            ventanaJuego.setSize(800, 600);
+            ventanaJuego.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventanaJuego.setLocationRelativeTo(null);
+            ventanaJuego.setVisible(true);
+
+            //Cerrar
+            this.dispose();
+
+
         }
+
   }
   public static void main(String [] args){
             new Menu().setVisible(true);

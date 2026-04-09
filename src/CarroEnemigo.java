@@ -7,7 +7,7 @@ public class CarroEnemigo {
     private int ancho = 40;
     private int alto = 30;
     private static Random random = new Random();
-    public CarroEnemigo(int c, int y, int velocidad){
+    public CarroEnemigo(int x, int y, int velocidad){
         this.x = x;
         this.y = y;
         this.velocidad = velocidad;
