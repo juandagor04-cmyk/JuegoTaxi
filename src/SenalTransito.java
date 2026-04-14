@@ -132,22 +132,63 @@ public class SenalTransito {
     //Vida
     public void actualizar(){
         tiempo++;
+        tiempoCambio++;
 
-        //Cambio de semaforo
-        if (subTipo == SEMAFORO && tiempo % 100 == 0){
-            enRojo = !enRojo;
+        if (subTipo == SEMAFORO){
+            switch (estadoSemaforo){
+                case ROJO:
+                    if (tiempoCambio >= duracionRojo){
+                        estadoSemaforo  = VERDE;
+                        tiempoCambio = 0;
+                        duracionVerde = 100 + random.nextInt(200);
+                        enRojo = false;
+                    }
+                    break;
+                case VERDE:
+                    if (tiempo >= duracionVerde){
+                        estadoSemaforo = AMARILLO;
+                        tiempoCambio = 0;
+                        duracionAmarillo = 40 + random.nextInt(30);
+                    }
+                    break;
+                case AMARILLO:
+                    if (tiempoCambio >= duracionAmarillo){
+                        estadoSemaforo = AMARILLO;
+                        tiempoCambio = 0;
+                        duracionRojo = 100 + random.nextInt(200);
+                        enRojo = true;
+                    }
+                    break;
+
+            }
         }
+
+
     }
     //Zona
     public Rectangle getZona(){
-        return new Rectangle(x,y,40,40);
+        return new Rectangle(x-10, y-10, 60,80);
     }
+
     //Reglas
     public void aplicarReglas(Taxi taxi){
         if (!taxi.getBounds().intersects(getZona()))return;
+
         //Semaforo
-        if (subTipo == SEMAFORO && enRojo){
-            taxi.setMulta(true);
+        if (subTipo == SEMAFORO ){
+            if (estadoSemaforo == ROJO){
+                taxi.setMulta(true);
+                taxi.setPuntos(-10);
+                System.out.println("Semaforo en rojo, -10 puntos ");
+            }else if (estadoSemaforo == AMARILLO){
+                taxi.setPrecaucion(true);
+                taxi.reducirVelocidad();
+                System.out.println("Semaforo en amarillo, precaucion");
+            } else if (estadoSemaforo == VERDE) {
+                taxi.setPuntos(2);
+                System.out.println("Semaforo verde tienes 2 puntos");
+
+            }
         }
         //Pare
         if (subTipo == PARE){
@@ -166,9 +207,24 @@ public class SenalTransito {
             taxi.recogerCliente();
         }
     }
-
-
-
+    public int getEstadoSemaforo(){
+        return estadoSemaforo;
     }
+    public String getEstadoTexto(){
+        switch (estadoSemaforo){
+            case ROJO: return "ROJO";
+            case AMARILLO: return "AMARILLO";
+            case VERDE: return "VERDE";
+            default: return "DESCONOCIDO";
+        }
+    }
+    public void cambiarEstado(int nuevoEstado){
+        if (subTipo == SEMAFORO && nuevoEstado >= 0 && nuevoEstado <= 2){
+            estadoSemaforo = nuevoEstado;
+            tiempoCambio = 0;
+            enRojo = (nuevoEstado == ROJO);
+        }
+        }
+}
 
 

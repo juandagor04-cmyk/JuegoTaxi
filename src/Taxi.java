@@ -11,6 +11,8 @@ public class Taxi {
     3 = Izquierda
     */
 
+
+    private int puntos = 100;
     private int ancho = 50;
     private int alto = 30;
 
@@ -101,6 +103,15 @@ public class Taxi {
 
     public int getVelocidad(){
         return velocidad;
+    }
+
+    //Puntos del juago
+    public void setPuntos(int cambio){
+        this.puntos += cambio;
+        if (this.puntos < 0) this.puntos = 0;
+    }
+    public int getPuntos(){
+        return puntos;
     }
 }
 
