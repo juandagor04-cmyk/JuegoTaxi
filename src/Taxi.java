@@ -3,6 +3,13 @@ public class Taxi {
     private int x;
     private int y;
     private int velocidad;
+    private int direccion = 1;
+    /*
+    0 = Arriba
+    1 = Derecha
+    2 = Abajo
+    3 = Izquierda
+    */
 
     private int ancho = 50;
     private int alto = 30;
@@ -28,12 +35,20 @@ public class Taxi {
         this.x = x;
         this.y = y;
         this.velocidad = velocidad;
+
+
+
     }
 
     //Movimiento
  public void mover (int dx, int dy){
         x += dx;
         y += dy;
+     if (dx > 0) direccion = 1; //Derecha
+     if (dx < 0) direccion = 3; //Izquierda
+     if (dy > 0) direccion = 2; // Abajo
+     if (dy < 0) direccion = 4; // Arriba
+
  }
     //Limites
 
@@ -48,11 +63,33 @@ public class Taxi {
     //Modelo Taxi
     public void dibujar(Graphics g){
         g.setColor(Color.YELLOW);
+
+        if (direccion == 1){ // Derecha
         g.fillRect(x, y, ancho, alto);
 
-        //Detalles
         g.setColor(Color.BLACK);
-        g.fillRect(x + 10, y +5, 30, 10);
+        g.fillRect(x+ 10, y + 5, 30, 10);
+        }
+        if (direccion == 3){ // Izquierda
+            g.fillRect(x,y,ancho, alto);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(x+10, y+5, 30, 10);
+        }
+        if (direccion == 0){ //Arriba
+            g.fillRect(x,y,ancho, alto);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(x+5, y+10, 10,30);
+        }
+        if (direccion == 2){ //Abajo
+            g.fillRect(x,y,ancho,alto);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(x+5,y+10,10,30);
+        }
+
+
     }
     //Colision
     public Rectangle getBounds(){

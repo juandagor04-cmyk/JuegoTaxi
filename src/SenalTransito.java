@@ -13,9 +13,24 @@ public class SenalTransito {
     public static final int CRUCE = 3;
     public static final int CLIENTE = 4;
 
+    //Estado del semaforo
+    public static final int ROJO = 0;
+    public static final int AMARILLO = 1;
+    public static final int VERDE  = 2;
+
     private int x, y;
     private int tipo;
     private int subTipo;
+
+    //Variables del semaforo mejorado
+    private int estadoSemaforo = ROJO;
+    private int tiempoCambio = 0;
+    private  Random random;
+
+    // Tiempo de duracion de cada color (ciclos)
+    private int duracionRojo;
+    private int duracionAmarillo;
+    private int duracionVerde;
 
     private boolean enRojo = true;
     private int tiempo  = 0;
@@ -25,19 +40,64 @@ public class SenalTransito {
         this.y = y;
         this.tipo = tipo;
         this.subTipo = subTipo;
+        this.random = new Random();
+
+        iniciarTiemposAleatorios();
+    }
+    private void iniciarTiemposAleatorios(){
+
+        duracionRojo = 100 + random.nextInt(200);
+        duracionAmarillo = 40 + random.nextInt(30);
+        duracionVerde = 100 + random.nextInt(200);
     }
     //Dibujar
     public void dibujar(Graphics g){
 
         //Reglamentaria
         if (tipo == REGLAMENTARIA){
-            if (subTipo == SEMAFORO){
-                g.setColor(Color.BLACK);
-                g.fillRect(x,y,20,50);
 
-                if (enRojo)g.setColor(Color.RED);
-                else g.setColor(Color.GREEN);
-                g.fillOval(x+5, y+10,10,10 );
+            if (subTipo == SEMAFORO){
+                //Dibujar el poste del semaforo
+                g.setColor(Color.DARK_GRAY);
+                g.fillRect(x+8,y+50,4,30);
+
+                //Luz Roja
+                if (estadoSemaforo == ROJO){
+                    g.setColor(Color.RED);
+                    g.fillOval(x+5, y+5, 10, 10);
+                    //Efecto
+                    g.setColor(new Color(255, 100, 100, 100));
+                    g.fillOval(x+3, y+3, 14, 14);
+                }else {
+                    g.setColor(new Color(80, 0, 0));
+                    g.fillOval(x + 5, y + 5, 10, 10);
+                }
+                //Luz Amarilla
+                if (estadoSemaforo == AMARILLO){
+                    g.setColor(Color.YELLOW);
+                    g.fillOval(x+5,y+20,10,10);
+
+                    //Efecto
+                    g.setColor(new Color(255,255,100,100));
+                    g.fillOval(x+3, y+18, 14,14);
+                }else{
+                    g.setColor(new Color(80,80,0));
+                    g.fillOval(x+5, y+20, 10,10);
+                }
+                //Luz verde
+                if (estadoSemaforo == VERDE){
+                    g.setColor(Color.GREEN);
+                    g.fillOval(x+5, y+35, 10, 10);
+                    // Efecto de brillo
+                    g.setColor(new Color(100, 255, 100, 100));
+                    g.fillOval(x+3, y+33, 14, 14);
+                } else {
+                    g.setColor(new Color(0, 80, 0));
+                    g.fillOval(x+5, y+35, 10, 10);
+                }
+
+
+
             }
             if (subTipo == PARE){
                 g.setColor(Color.RED);

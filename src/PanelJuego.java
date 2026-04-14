@@ -91,6 +91,7 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
             cliente.recoger();
             JOptionPane.showMessageDialog(this, "Cliente recogido!");
         }
+        taxi.limitarMovimiento(getHeight(), getWidth());
 
         repaint();
     }
