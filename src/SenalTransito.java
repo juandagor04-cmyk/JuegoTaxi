@@ -100,25 +100,94 @@ public class SenalTransito {
 
             }
             if (subTipo == PARE){
+              //Poste 
+                g.setColor(Color.GRAY);
+                g.fillRect(x+13, y+28, 4, 40);
+
+                //Octagono
                 g.setColor(Color.RED);
-                g.fillRect(x,y,30,30);
+                Polygon parePolygon = new Polygon();
+                parePolygon.addPoint(x+15, y+5);
+                parePolygon.addPoint(x+25, y+5);
+                parePolygon.addPoint(x+30, y+10);
+                parePolygon.addPoint(x+30, y+20);
+                parePolygon.addPoint(x+25, y+25);
+                parePolygon.addPoint(x+15, y+25);
+                parePolygon.addPoint(x+10, y+20);
+                parePolygon.addPoint(x+10, y+10);
+
+                g.fillPolygon(parePolygon);
+
+
+                //Borde Blanco
                 g.setColor(Color.WHITE);
-                g.drawString("PARE", x,y + 20);
+                g.drawPolygon(parePolygon);
+
+                //Texto
+                g.setFont(new Font("Impact", Font.BOLD, 10));
+                g.drawString ("PARE",x+12,y+19);
+
+
             }
         }
         //Preventivas
-        if (tipo == PREVENTIVA){
-            g.setColor(Color.YELLOW);
-            g.fillRect(x,y,30,30);
+        if (tipo == PREVENTIVA) {
+
+            //Sombra
+            g.setColor(new Color(0, 0, 0, 50));
+            int[] sombraX = {x + 17, x + 32, x + 17, x + 2};
+            int[] sombraY = {y + 2, y + 17, y + 32, y + 17};
+            g.fillPolygon(sombraX, sombraY, 4);
+
+            //Fondo amarillo
+            g.setColor(new Color(255, 220, 0));
+            int[] diamante = {x + 15, x + 30, x + 15, x};
+            int[] diamanteY = {y, y + 15, y + 30, y + 15};
+
+            g.fillPolygon(diamante, diamanteY, 4);
+
+            //Borde negro
+            g.setColor(Color.BLACK);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setStroke(new BasicStroke(3));
+            g.drawPolygon(diamante, diamanteY, 4);
+
+
+            //Simbolo del tipo
+            g2d.setStroke(new BasicStroke(2));
             g.setColor(Color.BLACK);
 
-            if (subTipo == CURVA){
-                g.drawString("↷", x+10, y+20);
+            if (subTipo == CURVA) {
+                //Curva con flechas
+                g.drawArc(x + 5, y + 5, 20, 20, 0, -85);
+                //Flecha
+                g.fillPolygon(
+                        new int []{x+23, x+27, x+23},
+                        new int []{y+7, y+11, y+1},
+                        3
+                );
+                //Adicional opcional
+                g.setFont(new Font("Impact", Font.PLAIN, 8));
+                g.drawString("CURVA", x+6, y+28);
             }
             if (subTipo == CRUCE){
-                g.drawString("+", x+10,y+20);
+                //CRUZ
+                g2d.setStroke(new BasicStroke(3));
+                //Lineas Diagonales
+                g.drawLine(x+8, y+8, x+22, y+22);
+                g.drawLine(x+22, y+8, x+8, y+22);
+                // Líneas horizontales y verticales
+                g.drawLine(x+5, y+15, x+25, y+15);
+                g.drawLine(x+15, y+5, x+15, y+25);
+                // Texto opcional
+                g.setFont(new Font("Impact", Font.PLAIN, 7));
+                g.drawString("CRUCE", x+6, y+28);
+
             }
+
+
         }
+
         //Informativas
         if (tipo == INFORMATIVA){
             g.setColor(Color.BLUE);
