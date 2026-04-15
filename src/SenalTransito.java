@@ -190,11 +190,25 @@ public class SenalTransito {
 
         //Informativas
         if (tipo == INFORMATIVA){
-            g.setColor(Color.BLUE);
-            g.fillRect(x,y,30,30);
-            g.setColor(Color.WHITE);
-            if (subTipo == CLIENTE){
-                g.drawString("C", x+10,y+20);
+            if (tipo == CLIENTE){
+                //Sombra Color
+                g.setColor(new Color(0,100,200));
+                g.fillRoundRect(x,y,30,30,8,8);
+
+                //Borde blanco
+                g.setColor(Color.WHITE);
+                ((Graphics2D)g).setStroke(new BasicStroke(2));
+                g.drawRoundRect(x,y,30,30,8,8);
+
+                //Incono
+                g.setColor(Color.WHITE);
+                g.fillOval(x+11,y+6, 8, 8); //Cabeza
+                g.fillRect(x+12, y+14, 6, 10); // Cuerpo
+                g.drawLine(x+10, y+18, x+20, y+18);// Brazos
+
+                //Letra C
+                g.setFont(new Font("Impact", Font.BOLD, 12));
+                g.drawString("C", x+22, y+10);
             }
         }
     }
