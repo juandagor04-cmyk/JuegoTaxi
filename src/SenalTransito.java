@@ -190,7 +190,7 @@ public class SenalTransito {
 
         //Informativas
         if (tipo == INFORMATIVA){
-            if (tipo == CLIENTE){
+            if (subTipo == CLIENTE){
                 //Sombra Color
                 g.setColor(new Color(0,100,200));
                 g.fillRoundRect(x,y,30,30,8,8);
@@ -236,7 +236,7 @@ public class SenalTransito {
                     break;
                 case AMARILLO:
                     if (tiempoCambio >= duracionAmarillo){
-                        estadoSemaforo = AMARILLO;
+                        estadoSemaforo = ROJO;
                         tiempoCambio = 0;
                         duracionRojo = 100 + random.nextInt(200);
                         enRojo = true;

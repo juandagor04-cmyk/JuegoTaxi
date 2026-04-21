@@ -69,6 +69,7 @@ public class CarroEnemigo {
             case 2: //Derecha
                 x += velocidad;
                 y = carrilesDisponibles [carrilActual ] - alto/2;
+                break;
             case 3: //Izquierda
                 x -= velocidad;
                 y = carrilesDisponibles [carrilActual] - alto /2;
