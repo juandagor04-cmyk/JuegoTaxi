@@ -244,7 +244,7 @@ public class Mapa {
         calleLimiteDerecho = centroX + 100;
     }
 
-    // Método auxiliar para dibujar andenes
+    // Metodo de los andanes por bordes
     private void dibujarAnden(Graphics g, int x, int y, int ancho, int alto, boolean esAcera) {
         if (ancho <= 0 || alto <= 0) return;
 

@@ -5,22 +5,14 @@ public class Taxi {
     private int x, y;
     private int velocidad;
     private double angulo;
-
-    private int ancho = 40;
-    private int alto = 25;
-
+    private int ancho = 48;
+    private int alto = 32;
     private int puntos = 100;
     private boolean multa = false;
     private boolean precaucion = false;
-
-    // Animación de llantas
-    private double rotacionLlantas = 0;
-    private boolean moviendoLlantas = false;
-    private double direccionLlantas = 1;
-
-    // Efectos visuales
-    private int framesChoque = 0;
+    private double steerAngle = 0;
     private int framesNitrogeno = 0;
+    private int framesMulta = 0;
 
     public Taxi(int x, int y, int velocidad) {
         this.x = x;
@@ -29,256 +21,183 @@ public class Taxi {
         this.angulo = Math.PI / 2;
     }
 
-    // ============ MÉTODOS REQUERIDOS POR LAS SEÑALES ============
-
+    // ============ MÉTODOS REQUERIDOS ============
     public void setMulta(boolean m) {
         this.multa = m;
-        if (m) framesChoque = 10;
+        if (m) framesMulta = 8;
     }
+    public void setPrecaucion(boolean p) { this.precaucion = p; }
+    public void reducirVelocidad() { velocidad = Math.max(1, velocidad - 1); }
+    public void recogerCliente() { puntos += 50; }
+    public void setPuntos(int cambio) { puntos += cambio; if (puntos < 0) puntos = 0; }
+    public int getPuntos() { return puntos; }
+    public Rectangle getBounds() { return new Rectangle(x, y, ancho, alto); }
 
-    public void setPrecaucion(boolean p) {
-        this.precaucion = p;
-    }
-
-    public void reducirVelocidad() {
-        velocidad = Math.max(1, velocidad - 1);
-    }
-
-    public void recogerCliente() {
-        System.out.println("Cliente recogido");
-        puntos += 50;
-    }
-
-    public void setPuntos(int cambio) {
-        this.puntos += cambio;
-        if (this.puntos < 0) this.puntos = 0;
-    }
-
-    public int getPuntos() {
-        return puntos;
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, ancho, alto);
-    }
-
-    // ============ MÉTODOS DE MOVIMIENTO ============
-
-    public void aumentarVelocidad(int incremento) {
-        velocidad += incremento;
+    // ============ MOVIMIENTO ============
+    public void aumentarVelocidad(int inc) {
+        velocidad += inc;
         if (velocidad > 12) velocidad = 12;
         framesNitrogeno = 5;
     }
-
     public void moverAdelante() {
-        double dx = Math.cos(angulo) * velocidad;
-        double dy = Math.sin(angulo) * velocidad;
-        x += dx;
-        y += dy;
-
-        if (velocidad > 0) {
-            rotacionLlantas += 0.3 * (velocidad / 3.0);
-            moviendoLlantas = true;
-        }
+        x += Math.cos(angulo) * velocidad;
+        y += Math.sin(angulo) * velocidad;
+        steerAngle *= 0.95;
     }
-
     public void moverAtras() {
-        double dx = -Math.cos(angulo) * (velocidad / 2);
-        double dy = -Math.sin(angulo) * (velocidad / 2);
-        x += dx;
-        y += dy;
-        rotacionLlantas -= 0.2;
-        moviendoLlantas = true;
+        x -= Math.cos(angulo) * (velocidad / 2);
+        y -= Math.sin(angulo) * (velocidad / 2);
+        steerAngle *= 0.95;
     }
-
     public void girarIzquierda() {
         angulo -= Math.toRadians(5);
-        direccionLlantas = -0.5;
+        steerAngle = Math.max(-Math.toRadians(35), steerAngle - Math.toRadians(4));
     }
-
     public void girarDerecha() {
         angulo += Math.toRadians(5);
-        direccionLlantas = 0.5;
+        steerAngle = Math.min(Math.toRadians(35), steerAngle + Math.toRadians(4));
     }
-
-    // Método de movimiento simplificado (para compatibilidad)
-    public void mover(int dx, int dy) {
-        if (dx > 0) {
-            if (Math.abs(Math.toDegrees(angulo) % 360 - 90) < 10) {
-                angulo = Math.toRadians(90);
-            } else {
-                angulo = angulo * 0.95 + Math.toRadians(90) * 0.05;
-            }
-        } else if (dx < 0) {
-            if (Math.abs(Math.toDegrees(angulo) % 360 - 270) < 10) {
-                angulo = Math.toRadians(270);
-            } else {
-                angulo = angulo * 0.95 + Math.toRadians(270) * 0.05;
-            }
-        } else if (dy > 0) {
-            if (Math.abs(Math.toDegrees(angulo) % 360 - 180) < 10) {
-                angulo = Math.toRadians(180);
-            } else {
-                angulo = angulo * 0.95 + Math.toRadians(180) * 0.05;
-            }
-        } else if (dy < 0) {
-            if (Math.abs(Math.toDegrees(angulo) % 360 - 0) < 10 ||
-                    Math.abs(Math.toDegrees(angulo) % 360 - 360) < 10) {
-                angulo = Math.toRadians(0);
-            } else {
-                angulo = angulo * 0.95;
-            }
-        }
-
-        moverAdelante();
-    }
-
-    public void limitarMovimiento(int anchoPanel, int altoPanel) {
+    public void mover(int dx, int dy) { moverAdelante(); } // compatibilidad
+    public void limitarMovimiento(int anchoP, int altoP) {
         if (x < 0) x = 0;
         if (y < 0) y = 0;
-        if (x + ancho > anchoPanel) x = anchoPanel - ancho;
-        if (y + alto > altoPanel) y = altoPanel - alto;
+        if (x + ancho > anchoP) x = anchoP - ancho;
+        if (y + alto > altoP) y = altoP - alto;
     }
 
-    // ============ GETTERS Y SETTERS ============
-
+    // ============ GETTERS / SETTERS ============
     public int getX() { return x; }
     public int getY() { return y; }
     public int getVelocidad() { return velocidad; }
     public int getAncho() { return ancho; }
     public int getAlto() { return alto; }
     public double getAngulo() { return angulo; }
-
     public void setX(int x) { this.x = x; }
     public void setY(int y) { this.y = y; }
-    public void setVelocidad(int velocidad) { this.velocidad = velocidad; }
+    public void setVelocidad(int v) { velocidad = v; }
 
     // ============ DIBUJADO ============
-
     public void dibujar(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
-        AffineTransform oldTransform = g2d.getTransform();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int centroX = x + ancho / 2;
-        int centroY = y + alto / 2;
-        g2d.translate(centroX, centroY);
+        AffineTransform old = g2d.getTransform();
+        int cx = x + ancho / 2;
+        int cy = y + alto / 2;
+        g2d.translate(cx, cy);
         g2d.rotate(angulo);
         g2d.translate(-ancho / 2, -alto / 2);
 
-        // Efecto de choque
-        if (framesChoque > 0) {
-            int temblorX = (int)(Math.random() * 6) - 3;
-            int temblorY = (int)(Math.random() * 6) - 3;
-            g2d.translate(temblorX, temblorY);
-            framesChoque--;
-        }
-
-        // Efecto nitro
+        // === EFECTO NITRO (llamas detrás) ===
         if (framesNitrogeno > 0) {
-            g2d.setColor(new Color(255, 100, 0, 100));
-            for (int i = 1; i <= 3; i++) {
-                g2d.fillRect(-i * 5, alto / 2 - 5, 5, 10);
-            }
+            g2d.setColor(new Color(255, 100, 0, 180));
+            int off = (velocidad > 5) ? 12 : 6;
+            g2d.fillRect(-off, alto / 2 - 4, 8, 8);
             framesNitrogeno--;
         }
 
-        // Sombra
-        g2d.setColor(new Color(0, 0, 0, 80));
-        g2d.fillRoundRect(2, 2, ancho, alto, 8, 8);
+        // === CARROCERÍA PRINCIPAL ===
+        Color colorBase = (multa && framesMulta > 0) ? Color.RED : new Color(255, 210, 0);
+        g2d.setColor(colorBase);
+        g2d.fillRoundRect(0, 0, ancho, alto, 12, 12);
+        g2d.setColor(new Color(200, 150, 0));
+        g2d.drawRoundRect(0, 0, ancho, alto, 12, 12);
+        if (framesMulta > 0) framesMulta--;
 
-        // Cuerpo principal
-        if (multa && framesChoque % 2 == 0) {
-            g2d.setColor(Color.RED);
-        } else {
-            g2d.setColor(new Color(255, 220, 0));
-        }
-        g2d.fillRoundRect(0, 0, ancho, alto, 8, 8);
-
-        // Techo
-        g2d.setColor(new Color(255, 200, 0));
-        g2d.fillRoundRect(5, -5, ancho - 10, 10, 5, 5);
-
-        // Ventanas
-        g2d.setColor(new Color(100, 150, 200, 200));
-        g2d.fillRect(8, 3, 10, 12);
-        g2d.fillRect(22, 3, 10, 12);
-
+        // === TECHO Y LETRERO "TAXI" ===
+        g2d.setColor(new Color(255, 190, 0));
+        g2d.fillRoundRect(8, -5, ancho - 16, 9, 6, 6);
         g2d.setColor(Color.BLACK);
-        g2d.drawRect(8, 3, 10, 12);
-        g2d.drawRect(22, 3, 10, 12);
-
-        // Parachoques
-        g2d.setColor(Color.GRAY);
-        g2d.fillRect(ancho - 8, alto / 2 - 4, 8, 8);
-        g2d.fillRect(0, alto / 2 - 4, 8, 8);
-
-        // Faros
-        g2d.setColor(new Color(255, 255, 150));
-        g2d.fillRect(ancho - 5, alto / 2 - 6, 5, 4);
-        g2d.fillRect(ancho - 5, alto / 2 + 2, 5, 4);
-
-        // Luces traseras
-        g2d.setColor(Color.RED);
-        g2d.fillRect(0, alto / 2 - 6, 4, 4);
-        g2d.fillRect(0, alto / 2 + 2, 4, 4);
-
-        // Llantas
-        dibujarLlanta(g2d, 6, alto - 8, 10, 8, rotacionLlantas);
-        dibujarLlanta(g2d, ancho - 16, alto - 8, 10, 8, rotacionLlantas);
-        dibujarLlanta(g2d, 6, 0, 10, 8, rotacionLlantas);
-        dibujarLlanta(g2d, ancho - 16, 0, 10, 8, rotacionLlantas);
-
-        // Puerta
-        g2d.setColor(new Color(180, 150, 0));
-        g2d.drawLine(ancho / 2, 3, ancho / 2, alto - 3);
-
-        // Manija
-        g2d.setColor(Color.DARK_GRAY);
-        g2d.fillRect(ancho / 2 + 2, alto / 2 - 2, 6, 3);
-
-        // Logo TAXI
-        g2d.setColor(Color.BLACK);
+        g2d.fillRoundRect(ancho / 2 - 14, -12, 28, 8, 4, 4);
+        g2d.setColor(Color.YELLOW);
         g2d.setFont(new Font("Arial", Font.BOLD, 8));
-        g2d.drawString("TAXI", ancho / 2 - 6, alto / 2 + 3);
+        g2d.drawString("TAXI", ancho / 2 - 11, -6);
+        /*
+        // === VENTANAS ===
+        g2d.setColor(new Color(80, 140, 200, 220));
+        g2d.fillRoundRect(6, 4, 13, 12, 5, 5);
+        g2d.fillRoundRect(ancho - 19, 4, 13, 12, 5, 5);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRoundRect(6, 4, 13, 12, 5, 5);
+        g2d.drawRoundRect(ancho - 19, 4, 13, 12, 5, 5);
+        // Reflejo
+        g2d.setColor(new Color(255, 255, 255, 100));
+        g2d.drawLine(8, 6, 16, 6);
+        g2d.drawLine(ancho - 17, 6, ancho - 9, 6);
 
-        g2d.setTransform(oldTransform);
+         */
 
-        if (!moviendoLlantas) {
-            rotacionLlantas *= 0.95;
+        // === PARACHOQUES ===
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillRoundRect(ancho - 12, alto / 2 - 6, 12, 12, 4, 4);
+        g2d.fillRoundRect(0, alto / 2 - 6, 12, 12, 4, 4);
+
+        // === FAROS DELANTEROS ===
+        g2d.setColor(Color.WHITE);
+        g2d.fillRoundRect(ancho - 8, alto / 2 - 8, 6, 4, 2, 2);
+        g2d.fillRoundRect(ancho - 8, alto / 2 + 4, 6, 4, 2, 2);
+        if (velocidad > 0) {
+            g2d.setColor(new Color(255, 255, 150, 120));
+            g2d.fillOval(ancho - 5, alto / 2 - 7, 4, 3);
+            g2d.fillOval(ancho - 5, alto / 2 + 5, 4, 3);
         }
-        moviendoLlantas = false;
-        direccionLlantas *= 0.9;
+
+        // === LUCES TRASERAS ===
+        g2d.setColor(Color.RED);
+        g2d.fillRoundRect(4, alto / 2 - 8 , 5, 4, 2, 2);
+        g2d.fillRoundRect(4, alto / 2 + 4, 5, 4, 2, 2);
+
+        // === DETALLES DE PUERTAS ===
+        g2d.setColor(new Color(150, 110, 20));
+        g2d.drawLine(ancho / 2, 4, ancho / 2, alto - 4);
+        g2d.setColor(new Color(100, 70, 10));
+        g2d.fillRoundRect(ancho / 2 + 4, alto / 2 - 3, 7, 3, 2, 2);
+        g2d.fillRoundRect(ancho - 22, alto / 2 - 3, 7, 3, 2, 2);
+
+        /*
+        // === LOGO "TAXI" LATERAL ===
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("Arial", Font.BOLD, 10));
+        g2d.drawString("TAXI", ancho / 2 - 12, alto / 2 + 4);
+
+         */
+        /*
+        // === FRANJA DE AJEDREZ (checkers) ===
+        int checkStart = ancho - 32;
+        g2d.setColor(Color.BLACK);
+        for (int i = 0; i < 10; i++) {
+            if (i % 2 == 0) {
+                g2d.fillRect(checkStart + i * 3, 3, 2, 3);
+                g2d.fillRect(checkStart + i * 3, alto - 6, 2, 3);
+            }
+        }
+
+         */
+
+        // === INDICADORES DE DIRECCIÓN (RUEDAS DELANTERAS) ===
+        int anchoInd = 9;
+        int altoInd = 4;
+        int xInd = ancho - 18;   // posición delantera
+        int ySup = 5;
+        int yInf = alto - 9;
+
+        dibujarIndicador(g2d, xInd, ySup, anchoInd, altoInd, steerAngle);
+        dibujarIndicador(g2d, xInd, yInf, anchoInd, altoInd, steerAngle);
+
+        g2d.setTransform(old);
     }
 
-    private void dibujarLlanta(Graphics2D g, int x, int y, int anchoLlanta, int altoLlanta, double rotacion) {
+    private void dibujarIndicador(Graphics2D g, int x, int y, int w, int h, double anguloDir) {
         AffineTransform old = g.getTransform();
-        int centroX = x + anchoLlanta / 2;
-        int centroY = y + altoLlanta / 2;
-        g.translate(centroX, centroY);
-        g.rotate(rotacion);
-        g.translate(-anchoLlanta / 2, -altoLlanta / 2);
-
+        int cx = x + w / 2;
+        int cy = y + h / 2;
+        g.translate(cx, cy);
+        g.rotate(anguloDir);
+        g.translate(-w / 2, -h / 2);
         g.setColor(Color.BLACK);
-        g.fillRoundRect(0, 0, anchoLlanta, altoLlanta, 4, 4);
-
-        g.setColor(Color.DARK_GRAY);
-        g.fillRoundRect(2, 1, anchoLlanta - 4, altoLlanta - 2, 3, 3);
-
+        g.fillRoundRect(0, 0, w, h, 3, 3);
         g.setColor(Color.LIGHT_GRAY);
-        for (int i = 0; i < 4; i++) {
-            int radio = Math.min(anchoLlanta, altoLlanta) / 3;
-            double anguloRayo = i * Math.PI / 2;
-            int xCentro = anchoLlanta / 2;
-            int yCentro = altoLlanta / 2;
-            int x1 = xCentro + (int)(Math.cos(anguloRayo) * radio * 0.5);
-            int y1 = yCentro + (int)(Math.sin(anguloRayo) * radio * 0.5);
-            int x2 = xCentro + (int)(Math.cos(anguloRayo) * radio);
-            int y2 = yCentro + (int)(Math.sin(anguloRayo) * radio);
-            g.drawLine(x1, y1, x2, y2);
-        }
-
-        g.setColor(Color.GRAY);
-        g.fillOval(anchoLlanta / 2 - 2, altoLlanta / 2 - 2, 4, 4);
+        g.drawLine(w / 2, 1, w / 2, h - 1);
         g.setTransform(old);
     }
 }
