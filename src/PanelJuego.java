@@ -4,7 +4,6 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-
 public class PanelJuego extends JPanel implements ActionListener, KeyListener {
 
     private Taxi taxi;
@@ -17,12 +16,13 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
     private Timer timer;
     private Random random;
 
-
     private boolean izquierda = false;
     private boolean derecha = false;
     private boolean adelante = false;
     private boolean atras = false;
 
+    private int anchoPantalla = 800;
+    private int altoPantalla = 600;
 
     public PanelJuego() {
         setFocusable(true);
@@ -30,97 +30,79 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
         setBackground(new Color(30,30,35));
         random = new Random();
 
-
-        taxi = new Taxi(400, 300, 5);
+        taxi = new Taxi(anchoPantalla / 2, altoPantalla / 2, 5);
         mapa = new Mapa();
 
-        //Posicion del Cliente
-        generarClienteEnAnden();
+        generarMundo();
 
+        // El Timer corre cada 40ms (~25 frames por segundo)
+        timer = new Timer(40, this);
+        timer.start();
+    }
+
+    private void generarMundo() {
+        generarClienteEnAnden();
         senales = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             int tipo = random.nextInt(3);
             int subtipo = random.nextInt(5);
-            int x = 50 + random.nextInt(700);
-            int y = 50 + random.nextInt(500);
+            int x = 50 + random.nextInt(anchoPantalla - 100);
+            int y = 50 + random.nextInt(altoPantalla / 2 + 100);
             senales.add(new SenalTransito(x, y, tipo, subtipo));
-
-
-
-
         }
-
         enemigos = new ArrayList<>();
         generarEnemigos();
-
-
-
-        timer = new Timer(40, this);
-        timer.start();
     }
-    //Generar Cliente
-    private void generarClienteEnAnden(){
-        int [] carriles = mapa.getCarriles();
+
+    private void generarClienteEnAnden() {
+        int[] carriles = mapa.getCarriles();
         int tipoMapa = mapa.getTipoMapa();
         int x, y;
 
-        switch (tipoMapa){
+        switch (tipoMapa) {
             case 0:
                 int andenY = random.nextBoolean() ? mapa.getCalleLimiteSuperior() - 40 : mapa.getCalleLimiteInferior() + 10;
-                int carril = carriles [random.nextInt(carriles.length)];
-                x = carril - 12;
+                int carrilX = carriles[random.nextInt(carriles.length)];
+                x = carrilX - 12;
                 y = andenY;
                 break;
-
-            case 1: //Recta vertical
+            case 1:
                 int andenX = random.nextBoolean() ? mapa.getCalleLimiteIzquierdo() - 40 : mapa.getCalleLimiteDerecho() + 10;
-                carril = carriles [random.nextInt(carriles.length)];
+                int carrilY = carriles[random.nextInt(carriles.length)];
                 x = andenX;
-                y = carril - 15;
+                y = carrilY - 15;
                 break;
-
             default:
-                x = 100 + random.nextInt(600);
-                y = 100 + random.nextInt(400);
+                x = 100 + random.nextInt(anchoPantalla - 200);
+                y = 100 + random.nextInt(altoPantalla / 2 + 100);
                 break;
         }
-        x = Math.max(20, Math.min(x, 760));
-        y = Math.max(20, Math.min(y, 560));
-
-        cliente = new Cliente (x, y);
+        x = Math.max(20, Math.min(x, anchoPantalla - 40));
+        y = Math.max(20, Math.min(y, altoPantalla / 2 + 160));
+        cliente = new Cliente(x, y);
     }
-    // Generar enemigos
-    private  void generarEnemigos(){
+
+    private void generarEnemigos() {
         enemigos.clear();
         int[] carriles = mapa.getCarriles();
-
-        for (int  i = 0; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             int carril = carriles[random.nextInt(carriles.length)];
             int velocidad = 2 + random.nextInt(3);
-            //Usarel constructor que recibe direccion
-            int direccion = 0; //Hacia abajo
-            enemigos.add(new CarroEnemigo(carril - 20, -50 - random.nextInt(200), velocidad, direccion, 0, carriles));
+            enemigos.add(new CarroEnemigo(carril - 20, -50 - random.nextInt(200), velocidad, 0, 0, carriles));
         }
     }
+
     @Override
-    protected void paintComponent (Graphics g){
+    protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         mapa.dibujar(g, getWidth(), getHeight());
-        if (cliente != null && ! cliente.fueRecogido()){
-            cliente.dibujar(g);
-        }
-        for (SenalTransito s : senales){
-            s.dibujar(g);
-        }
-        for (CarroEnemigo e : enemigos) {
-            e.dibujar(g);
-        }
+        if (cliente != null && !cliente.fueRecogido()) cliente.dibujar(g);
+        for (SenalTransito s : senales) s.dibujar(g);
+        for (CarroEnemigo e : enemigos) e.dibujar(g);
         taxi.dibujar(g);
-
-        // Dibujar Interfaz
         dibujarInterfaz(g);
-        }
+    }
+
     private void dibujarInterfaz(Graphics g) {
         g.setColor(new Color(0, 0, 0, 180));
         g.fillRect(10, 10, 200, 80);
@@ -131,52 +113,72 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
         g.drawString("MULTAS: " + (taxi.getPuntos() < 100 ? "⚠️" : "✓"), 20, 75);
     }
 
-
+    // ==========================================
+    // ESTA ES LA PARTE QUE CORREGIMOS
+    // ==========================================
     @Override
     public void actionPerformed(ActionEvent e) {
-        // Movimiento continuo con teclas presionadas
+
+        // 1. RECUPERACIÓN DE VELOCIDAD: Si el taxi está muy lento (por un choque o césped),
+        // aumentamos su velocidad gradualmente hasta llegar a la normal (5).
+        if (taxi.getVelocidad() < 5) {
+            // Usamos un pequeño truco de tiempo para que no acelere de golpe
+            if (System.currentTimeMillis() % 3 == 0) {
+                taxi.setVelocidad(taxi.getVelocidad() + 1);
+            }
+        }
+
+        // Aplicar movimiento según teclas
         if (adelante) taxi.moverAdelante();
         if (atras) taxi.moverAtras();
         if (izquierda) taxi.girarIzquierda();
         if (derecha) taxi.girarDerecha();
 
-        // Actualizar enemigos
-        int[] carriles = mapa.getCarriles();
-        for (int i = 0; i < enemigos.size(); i++) {
-            CarroEnemigo enemigo = enemigos.get(i);
+        // Colisiones con enemigos
+        for (CarroEnemigo enemigo : enemigos) {
             enemigo.mover(mapa, getWidth(), getHeight());
-
             if (taxi.getBounds().intersects(enemigo.getBounds())) {
-                taxi.setVelocidad(Math.max(1, taxi.getVelocidad() - 2));
-                JOptionPane.showMessageDialog(this, " ¡CHOQUE! \nVelocidad reducida");
+                taxi.setVelocidad(1); // Frenazo total por choque
+                JOptionPane.showMessageDialog(this, " ¡CHOQUE! ");
             }
         }
 
-        // Actualizar señales
+        // Señales
         for (SenalTransito s : senales) {
             s.actualizar();
             s.aplicarReglas(taxi);
         }
 
-        // Recoger cliente
+        // Clientes
         if (cliente != null && !cliente.fueRecogido() && taxi.getBounds().intersects(cliente.getBounds())) {
             cliente.recoger();
-            taxi.setPuntos(50);
-            JOptionPane.showMessageDialog(this, " ¡CLIENTE RECOGIDO! +50 puntos ");
-            generarClienteEnAnden(); // Nuevo cliente
+            taxi.recogerCliente();
+            JOptionPane.showMessageDialog(this, " ¡CLIENTE RECOGIDO! ");
+            generarClienteEnAnden();
         }
 
-        // Limitar movimiento del taxi
-        taxi.limitarMovimiento(getWidth(), getHeight());
+        // Cambio de escenario (bordes de pantalla)
+        int totalAncho = getWidth();
+        int totalAlto = getHeight();
+        boolean cambioEscenario = false;
 
-        // Verificar de salir a la calle
-        if (!mapa.estaDentroDeCalle(taxi.getX(), taxi.getY())){
+        if (taxi.getX() > totalAncho) { taxi.setX(-taxi.getAncho()); cambioEscenario = true; }
+        else if (taxi.getX() + taxi.getAncho() < 0) { taxi.setX(totalAncho); cambioEscenario = true; }
+        else if (taxi.getY() > totalAlto) { taxi.setY(-taxi.getAlto()); cambioEscenario = true; }
+        else if (taxi.getY() + taxi.getAlto() < 0) { taxi.setY(totalAlto); cambioEscenario = true; }
+
+        if (cambioEscenario) {
             mapa.generarMapa();
-            taxi.setX(400);
-            taxi.setY(300);
-            generarClienteEnAnden();
-            generarEnemigos();
-            taxi.setPuntos(25);
+            generarMundo();
+        }
+
+        // 2. PENALIZACIÓN POR CÉSPED:
+        // En lugar de restar 1 cada frame (que lo deja en 0),
+        // limitamos la velocidad máxima a 2 mientras esté fuera de la calle.
+        if (!cambioEscenario && !mapa.estaDentroDeCalle(taxi.getX(), taxi.getY())) {
+            if (taxi.getVelocidad() > 2) {
+                taxi.setVelocidad(2);
+            }
         }
 
         repaint();
@@ -185,61 +187,22 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         int tecla = e.getKeyCode();
-
-        switch (tecla) {
-            case KeyEvent.VK_LEFT:
-            case KeyEvent.VK_A:
-                izquierda = true;
-                break;
-            case KeyEvent.VK_RIGHT:
-            case KeyEvent.VK_D:
-                derecha = true;
-                break;
-            case KeyEvent.VK_UP:
-            case KeyEvent.VK_W:
-                adelante = true;
-                break;
-            case KeyEvent.VK_DOWN:
-            case KeyEvent.VK_S:
-                atras = true;
-                break;
-            case KeyEvent.VK_SPACE:
-                taxi.aumentarVelocidad(2);
-                break;
-            case KeyEvent.VK_SHIFT:
-                taxi.reducirVelocidad();
-                break;
-        }
+        if (tecla == KeyEvent.VK_LEFT || tecla == KeyEvent.VK_A) izquierda = true;
+        if (tecla == KeyEvent.VK_RIGHT || tecla == KeyEvent.VK_D) derecha = true;
+        if (tecla == KeyEvent.VK_UP || tecla == KeyEvent.VK_W) adelante = true;
+        if (tecla == KeyEvent.VK_DOWN || tecla == KeyEvent.VK_S) atras = true;
+        if (tecla == KeyEvent.VK_SPACE) taxi.aumentarVelocidad(3); // Nitro
+        if (tecla == KeyEvent.VK_SHIFT) taxi.setVelocidad(1); // Freno de mano
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
         int tecla = e.getKeyCode();
-
-        switch (tecla) {
-            case KeyEvent.VK_LEFT:
-            case KeyEvent.VK_A:
-                izquierda = false;
-                break;
-            case KeyEvent.VK_RIGHT:
-            case KeyEvent.VK_D:
-                derecha = false;
-                break;
-            case KeyEvent.VK_UP:
-            case KeyEvent.VK_W:
-                adelante = false;
-                break;
-            case KeyEvent.VK_DOWN:
-            case KeyEvent.VK_S:
-                atras = false;
-                break;
-        }
+        if (tecla == KeyEvent.VK_LEFT || tecla == KeyEvent.VK_A) izquierda = false;
+        if (tecla == KeyEvent.VK_RIGHT || tecla == KeyEvent.VK_D) derecha = false;
+        if (tecla == KeyEvent.VK_UP || tecla == KeyEvent.VK_W) adelante = false;
+        if (tecla == KeyEvent.VK_DOWN || tecla == KeyEvent.VK_S) atras = false;
     }
 
-    @Override
-    public void keyTyped(KeyEvent e) {}
+    @Override public void keyTyped(KeyEvent e) {}
 }
-
-
-
-
