@@ -1,17 +1,18 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.Random;
+
 public class CarroEnemigo {
     private int x, y;
     private int velocidad;
     private double angulo;
 
+    // === DIMENSIONES ACTUALIZADAS PARA MATCHEAR CON EL TAXI ===
     private int ancho = 40;
-    private int alto = 30;
+    private int alto = 72;
     private static Random random = new Random();
 
-    //Tipos de carros
+    // Tipos de carros
     private int tipoCarro;
     private Color[] coloresCarro = {
             new Color(200, 50, 50),   // Rojo
@@ -19,22 +20,22 @@ public class CarroEnemigo {
             new Color(50, 180, 80),   // Verde
             new Color(200, 150, 50),  // Naranja
             new Color(150, 50, 150),  // Morado
-            new Color(80, 80, 90)     // Gris
+            new Color(180, 180, 190)  // Plateado/Gris claro
     };
-    //Direccion del Carro
+
+    // Direccion del Carro
     private int direccion;
 
-    //Animacion
-    private double rotacionLlantas = 0;
+    // Animacion y estado
     private boolean activo = true;
 
-    //Para la IA
+    // Para la IA
     private int carrilActual;
-    private int [] carrilesDisponibles;
+    private int[] carrilesDisponibles;
     private boolean enInterseccion = false;
     private int tiempoEspera = 0;
 
-    public CarroEnemigo(int x, int y, int velocidad, int direccion, int carril, int [] carriles){
+    public CarroEnemigo(int x, int y, int velocidad, int direccion, int carril, int[] carriles) {
         this.x = x;
         this.y = y;
         this.velocidad = velocidad;
@@ -43,217 +44,208 @@ public class CarroEnemigo {
         this.carrilesDisponibles = carriles;
         this.tipoCarro = random.nextInt(coloresCarro.length);
 
-        //Establecer angulo segun direccion
-        switch (direccion){
+        actualizarAnguloLogico();
+    }
+
+    private void actualizarAnguloLogico() {
+        switch (direccion) {
             case 0: angulo = Math.PI; break;
             case 1: angulo = 0; break;
-            case 2: angulo =  Math.PI/2; break;
-            case 3: angulo = -Math.PI/2; break;
+            case 2: angulo = Math.PI / 2; break;
+            case 3: angulo = -Math.PI / 2; break;
         }
     }
+
     // Mover con IA
-    public void mover(Mapa mapa, int anchoPanel, int altoPanel){
+    public void mover(Mapa mapa, int anchoPanel, int altoPanel) {
         if (!activo) return;
 
-        //Movimeinto segun de la direccion
-        switch (direccion){
-            case 0: //Abajo
+        // Movimiento segun de la direccion
+        switch (direccion) {
+            case 0: // Abajo
                 y += velocidad;
-                //Mantener en el carril
-                x = carrilesDisponibles[carrilActual]- ancho /  2;
+                x = carrilesDisponibles[carrilActual] - ancho / 2;
                 break;
-            case 1: //Arriba
+            case 1: // Arriba
                 y -= velocidad;
-                x = carrilesDisponibles [carrilActual] - ancho / 2;
+                x = carrilesDisponibles[carrilActual] - ancho / 2;
                 break;
-            case 2: //Derecha
+            case 2: // Derecha
                 x += velocidad;
-                y = carrilesDisponibles [carrilActual ] - alto/2;
+                y = carrilesDisponibles[carrilActual] - alto / 2;
                 break;
-            case 3: //Izquierda
+            case 3: // Izquierda
                 x -= velocidad;
-                y = carrilesDisponibles [carrilActual] - alto /2;
+                y = carrilesDisponibles[carrilActual] - alto / 2;
                 break;
         }
-        //Animar Llanta
-        rotacionLlantas +=0.2 * (velocidad /3.0);
 
-        //Verificar se esta en interseccion
+        // Verificar se esta en interseccion
         verificarInterseccion(mapa);
 
-        //Si esta interseccion, posiblemente en esperar o girar
-        if (enInterseccion){
-            tiempoEspera ++;
-            if (tiempoEspera > 30 && random.nextInt(100)< 20){
-                //Probabilidad de girar en la interseccion
-                if (random.nextBoolean()){
+        // Si esta interseccion, posiblemente en esperar o girar
+        if (enInterseccion) {
+            tiempoEspera++;
+            if (tiempoEspera > 30 && random.nextInt(100) < 20) {
+                if (random.nextBoolean()) {
                     girarAleatorio();
                 }
                 tiempoEspera = 0;
             }
         }
-        //Desaparecer si sale en la pantalla
-        if (fueraDePatalla(anchoPanel, altoPanel)){
+
+        // Desaparecer si sale de la pantalla
+        if (fueraDePantalla(anchoPanel, altoPanel)) {
             activo = false;
         }
     }
-    private void verificarInterseccion (Mapa mapa){
-        //Detectar si esta cerca del centro de una interseccion
+
+    private void verificarInterseccion(Mapa mapa) {
         int centroX = 400;
         int centroY = 300;
-
-        int distancia = (int)Math.hypot(x-centroX, y-centroY);
-        enInterseccion = (mapa.getTipoMapa()>=2 && distancia < 100);
+        int distancia = (int) Math.hypot(x - centroX, y - centroY);
+        enInterseccion = (mapa.getTipoMapa() >= 2 && distancia < 100);
     }
-    private void girarAleatorio(){
-        //Cmabiar direccion aleatorio
+
+    private void girarAleatorio() {
         int giro = random.nextInt(3);
+        switch (direccion) {
+            case 0: if (giro == 0) direccion = 2; else if (giro == 1) direccion = 3; break;
+            case 1: if (giro == 0) direccion = 2; else if (giro == 1) direccion = 3; break;
+            case 2: if (giro == 0) direccion = 0; else if (giro == 1) direccion = 1; break;
+            case 3: if (giro == 0) direccion = 0; else if (giro == 1) direccion = 1; break;
+        }
+        actualizarAnguloLogico();
+    }
 
-        switch (direccion){
-            case 0: //Abajo
-                if (giro == 0) direccion = 2; //Derecha
-                else if (giro == 1) direccion = 3; //Izquierda
-                break;
-            case 1: //Arriba
-                if (giro == 0) direccion = 2;
-                else if (giro == 1) direccion = 3;
-                break;
-            case 2://Derecha
-                if (giro == 0) direccion = 0;
-                else if (giro == 1) direccion = 1;
-                break;
-            case 3: //Izquierda
-                if (giro == 0) direccion = 0;
-                else if (giro == 1) direccion = 1;
-                break;
-        }
-        //Actualizar angulo
-        switch (direccion){
-            case 0: angulo = Math.PI; break;
-            case 1: angulo = 0; break;
-            case 2: angulo = Math.PI / 2; break;
-            case 3: angulo = -Math.PI /2; break;
-        }
+    private boolean fueraDePantalla(int ancho, int alto) {
+        // Le damos un poco de margen para que no desaparezcan de golpe
+        return (x + this.ancho + 100 < 0 || x > ancho + 100 || y + this.alto + 100 < 0 || y > alto + 100);
     }
-    private boolean fueraDePatalla(int ancho, int alto){
-        return (x + ancho < 0 || x > ancho || y + alto < 0 || y > alto);
-    }
-    //Metodo de simplficado de movimiento
-    public void moverSimple (int altoPanel, int [] carriles ){
+
+    public void moverSimple(int altoPanel, int[] carriles) {
         y += velocidad;
-        if (y > altoPanel + 100){
+        if (y > altoPanel + 100) {
             activo = false;
         }
-        //Matener en el carril
-        if (carriles != null && carriles.length > carrilActual){
-            x = carriles[carrilActual] - ancho /2;
+        if (carriles != null && carriles.length > carrilActual) {
+            x = carriles[carrilActual] - ancho / 2;
         }
-        rotacionLlantas+= 0.2;
     }
-    public void dibujar (Graphics g){
+
+    // ==========================================
+    // NUEVO DIBUJADO (ESTILO TAXI)
+    // ==========================================
+    public void dibujar(Graphics g) {
         if (!activo) return;
 
         Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         AffineTransform oldTransform = g2d.getTransform();
 
-        int centroX = x + ancho /2;
-        int centroY = y + alto  /2;
+        int centroX = x + ancho / 2;
+        int centroY = y + alto / 2;
         g2d.translate(centroX, centroY);
-        g2d.rotate(angulo);
-        g2d.translate(-ancho/ 2,-alto/2);
 
-        //sombra
-        g2d.setColor(new Color(0, 0, 0, 60));
-        g2d.fillRoundRect(2, 2, ancho, alto, 8, 8);
+        // Ajustamos la rotación visual según la dirección
+        double anguloVisual = 0;
+        switch (direccion) {
+            case 0: anguloVisual = Math.PI; break;       // Abajo
+            case 1: anguloVisual = 0; break;             // Arriba
+            case 2: anguloVisual = Math.PI / 2; break;   // Derecha
+            case 3: anguloVisual = -Math.PI / 2; break;  // Izquierda
+        }
+        g2d.rotate(anguloVisual);
+        g2d.translate(-ancho / 2, -alto / 2);
 
-        // Cuerpo principal
+        // === 1. RUEDAS ===
+        int rAncho = 10;
+        int rAlto = 18;
+        dibujarRueda(g2d, 0, alto - 20, rAncho, rAlto);       // Trasera Izquierda
+        dibujarRueda(g2d, ancho, alto - 20, rAncho, rAlto);   // Trasera Derecha
+        dibujarRueda(g2d, 0, 18, rAncho, rAlto);              // Delantera Izquierda
+        dibujarRueda(g2d, ancho, 18, rAncho, rAlto);          // Delantera Derecha
+
+        // === 2. CARROCERÍA PRINCIPAL ===
         g2d.setColor(coloresCarro[tipoCarro]);
-        g2d.fillRoundRect(0, 0, ancho, alto, 8, 8);
+        g2d.fillRoundRect(0, 0, ancho, alto, 16, 16);
 
-        // Techo
-        g2d.setColor(coloresCarro[tipoCarro].darker());
-        g2d.fillRoundRect(5, -3, ancho - 10, 8, 4, 4);
-
-        // Ventanas
-        g2d.setColor(new Color(80, 120, 180, 220));
-        g2d.fillRect(6, 3, 10, 10);
-        g2d.fillRect(24, 3, 10, 10);
-
+        // Borde negro grueso
         g2d.setColor(Color.BLACK);
-        g2d.drawRect(6, 3, 10, 10);
-        g2d.drawRect(24, 3, 10, 10);
+        g2d.setStroke(new BasicStroke(2.5f));
+        g2d.drawRoundRect(0, 0, ancho, alto, 16, 16);
 
-        // Parachoques
-        g2d.setColor(Color.DARK_GRAY);
-        g2d.fillRect(ancho - 6, alto / 2 - 3, 6, 6);
-        g2d.fillRect(0, alto / 2 - 3, 6, 6);
+        // === 3. VENTANAS GRISES ===
+        g2d.setColor(new Color(60, 75, 85));
+        g2d.setStroke(new BasicStroke(2.0f));
 
-        // Faros
-        g2d.setColor(new Color(255, 220, 100));
-        g2d.fillRect(ancho - 4, alto / 2 - 5, 4, 3);
-        g2d.fillRect(ancho - 4, alto / 2 + 2, 4, 3);
+        // Parabrisas Delantero
+        g2d.fillArc(4, 14, 32, 24, 0, 180);
+        g2d.setColor(Color.BLACK);
+        g2d.drawArc(4, 14, 32, 24, 0, 180);
 
-        // Luces traseras
-        g2d.setColor(Color.RED);
-        g2d.fillRect(0, alto / 2 - 5, 3, 3);
-        g2d.fillRect(0, alto / 2 + 2, 3, 3);
+        // Parabrisas Trasero
+        g2d.setColor(new Color(60, 75, 85));
+        g2d.fillArc(6, alto - 32, 28, 20, 180, 180);
+        g2d.setColor(Color.BLACK);
+        g2d.drawArc(6, alto - 32, 28, 20, 180, 180);
 
-        // Llantas
-        dibujarLlanta(g2d, 5, alto - 7, 9, 7, rotacionLlantas);
-        dibujarLlanta(g2d, ancho - 14, alto - 7, 9, 7, rotacionLlantas);
-        dibujarLlanta(g2d, 5, 0, 9, 7, rotacionLlantas);
-        dibujarLlanta(g2d, ancho - 14, 0, 9, 7, rotacionLlantas);
+        // Ventanas Laterales
+        g2d.setColor(new Color(60, 75, 85));
+        g2d.fillRoundRect(2, 28, 4, 16, 2, 2);
+        g2d.fillRoundRect(ancho - 6, 28, 4, 16, 2, 2);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRoundRect(2, 28, 4, 16, 2, 2);
+        g2d.drawRoundRect(ancho - 6, 28, 4, 16, 2, 2);
+
+        // === 4. ZONA TRASERA (Luces y maletero) ===
+        g2d.drawLine(0, alto - 12, ancho, alto - 12);
+
+        // Luces de freno (Rojas)
+        g2d.setColor(new Color(200, 0, 0));
+        g2d.fillRect(4, alto - 10, 6, 4);
+        g2d.fillRect(ancho - 10, alto - 10, 6, 4);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRect(4, alto - 10, 6, 4);
+        g2d.drawRect(ancho - 10, alto - 10, 6, 4);
+
+        // Parachoques trasero
+        g2d.fillRoundRect(8, alto - 2, 6, 4, 2, 2);
+        g2d.fillRoundRect(ancho - 14, alto - 2, 6, 4, 2, 2);
+
+        // === 5. ZONA DELANTERA (Faros) ===
+        // Luces delanteras (Amarillo claro/blanco)
+        g2d.setColor(new Color(255, 255, 200));
+        g2d.fillRoundRect(4, 2, 8, 4, 2, 2);
+        g2d.fillRoundRect(ancho - 12, 2, 8, 4, 2, 2);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRoundRect(4, 2, 8, 4, 2, 2);
+        g2d.drawRoundRect(ancho - 12, 2, 8, 4, 2, 2);
 
         g2d.setTransform(oldTransform);
     }
 
-    private void dibujarLlanta(Graphics2D g, int x, int y, int anchoLlanta, int altoLlanta, double rotacion) {
-        AffineTransform old = g.getTransform();
-        int centroX = x + anchoLlanta / 2;
-        int centroY = y + altoLlanta / 2;
-        g.translate(centroX, centroY);
-        g.rotate(rotacion);
-        g.translate(-anchoLlanta / 2, -altoLlanta / 2);
-
+    // Método simplificado para dibujar las ruedas (sin radios complejos)
+    private void dibujarRueda(Graphics2D g, int rx, int ry, int w, int h) {
+        g.setColor(new Color(30, 30, 30));
+        g.fillRoundRect(rx - w / 2, ry - h / 2, w, h, 4, 4);
         g.setColor(Color.BLACK);
-        g.fillRoundRect(0, 0, anchoLlanta, altoLlanta, 4, 4);
-
-        g.setColor(Color.DARK_GRAY);
-        g.fillRoundRect(1, 1, anchoLlanta - 2, altoLlanta - 2, 3, 3);
-
-        g.setColor(Color.GRAY);
-        for (int i = 0; i < 4; i++) {
-            int radio = Math.min(anchoLlanta, altoLlanta) / 3;
-            double anguloRayo = i * Math.PI / 2;
-            int xCentro = anchoLlanta / 2;
-            int yCentro = altoLlanta / 2;
-            int x1 = xCentro + (int)(Math.cos(anguloRayo) * radio * 0.4);
-            int y1 = yCentro + (int)(Math.sin(anguloRayo) * radio * 0.4);
-            int x2 = xCentro + (int)(Math.cos(anguloRayo) * radio);
-            int y2 = yCentro + (int)(Math.sin(anguloRayo) * radio);
-            g.drawLine(x1, y1, x2, y2);
-        }
-
-        g.setColor(Color.LIGHT_GRAY);
-        g.fillOval(anchoLlanta / 2 - 2, altoLlanta / 2 - 2, 4, 4);
-
-        g.setTransform(old);
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRoundRect(rx - w / 2, ry - h / 2, w, h, 4, 4);
     }
 
     public void colisionar() {
-        // Efecto visual de colisión
         velocidad = Math.max(1, velocidad - 1);
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y, ancho, alto);
+        // Ajustamos la caja de colisión para que sea un poco más permisiva (5 px más pequeña)
+        return new Rectangle(x + 5, y + 5, ancho - 10, alto - 10);
     }
 
     public boolean isActivo() { return activo; }
     public int getX() { return x; }
     public int getY() { return y; }
     public int getVelocidad() { return velocidad; }
-
     public void setActivo(boolean activo) { this.activo = activo; }
 }
-
