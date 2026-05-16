@@ -403,4 +403,10 @@ public class SenalTransito {
             enRojo = (nuevoEstado == ROJO);
         }
     }
+    public int getX(){
+        return this.x;
+    }
+    public int getY() {
+        return this.y;
+    }
 }

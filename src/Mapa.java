@@ -22,7 +22,7 @@ public class Mapa {
     private final Color CESPED_VARIACION = new Color(70, 150, 70);
     private final Color TIERRA = new Color(120, 90, 60);
 
-    private final Color[] COLORES_TECHOS = { new Color(180, 70, 50), new Color(100, 100, 110), new Color(150, 120, 90), new Color(80, 120, 80) };
+    private final Color[] COLORES_TECHOS = {new Color(180, 70, 50), new Color(100, 100, 110), new Color(150, 120, 90), new Color(80, 120, 80)};
 
     private ArrayList<Point> arbolesPos = new ArrayList<>();
     private ArrayList<Point> arbustosPos = new ArrayList<>();
@@ -52,25 +52,36 @@ public class Mapa {
         edificiosPos.clear();
     }
 
+    // === ERROR CORREGIDO AQUÍ: Faltaba el return false ===
+    public boolean chocaConEstructura(Rectangle limitesTaxi) {
+        for (Rectangle casa : casasPos) {
+            if (casa.intersects(limitesTaxi)) return true;
+        }
+        for (Rectangle edificio : edificiosPos) {
+            if (edificio.intersects(limitesTaxi)) return true;
+        }
+        for (Point arbol : arbolesPos) {
+            Rectangle hitBoxArbol = new Rectangle(arbol.x - 25, arbol.y - 25, 50, 50);
+            if (hitBoxArbol.intersects(limitesTaxi)) return true;
+        }
+        return false; // <-- Esto era lo que te faltaba
+    }
+
     public void generarMapa() {
         generarMapa(-1);
     }
-
-    // ====================================================================
-    // EL MAPA AHORA CONTROLA DÓNDE APARECEN LAS COSAS
-    // ====================================================================
 
     public Cliente generarClienteSeguro() {
         int x = 0, y = 0;
         int margenAnden = 35;
 
-        if (tipoMapa == 0) { // Horizontal
+        if (tipoMapa == 0) {
             x = 150 + random.nextInt(anchoMapa - 300);
             y = random.nextBoolean() ? calleLimiteSuperior - margenAnden : calleLimiteInferior + 10;
-        } else if (tipoMapa == 1) { // Vertical
+        } else if (tipoMapa == 1) {
             x = random.nextBoolean() ? calleLimiteIzquierdo - margenAnden : calleLimiteDerecho + 10;
             y = 150 + random.nextInt(altoMapa - 300);
-        } else { // Intersecciones y glorieta (Aparecen en las esquinas seguras)
+        } else {
             x = random.nextBoolean() ? 100 : anchoMapa - 100;
             y = random.nextBoolean() ? 100 : altoMapa - 100;
         }
@@ -120,10 +131,6 @@ public class Mapa {
         }
         return senales;
     }
-
-
-    // DIBUJO DEL MAPA
-
 
     public void dibujar(Graphics g, int ancho, int alto) {
         anchoMapa = ancho; altoMapa = alto;
@@ -311,7 +318,6 @@ public class Mapa {
         }
     }
 
-    // --- MÉTODOS DE SOPORTE Y DECORACIÓN ---
     private void dibujarAnden(Graphics g, int x, int y, int ancho, int alto, boolean horizontal) {
         if (ancho <= 0 || alto <= 0) return;
         g.setColor(ANDEN); g.fillRect(x, y, ancho, alto);
