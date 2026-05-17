@@ -80,10 +80,10 @@ public class CarroEnemigo {
                 break;
         }
 
-        // Verificar se esta en interseccion
+
         verificarInterseccion(mapa);
 
-        // Si esta interseccion, posiblemente en esperar o girar
+
         if (enInterseccion) {
             tiempoEspera++;
             if (tiempoEspera > 30 && random.nextInt(100) < 20) {
@@ -119,7 +119,7 @@ public class CarroEnemigo {
     }
 
     private boolean fueraDePantalla(int ancho, int alto) {
-        // Le damos un poco de margen para que no desaparezcan de golpe
+
         return (x + this.ancho + 100 < 0 || x > ancho + 100 || y + this.alto + 100 < 0 || y > alto + 100);
     }
 
@@ -133,9 +133,6 @@ public class CarroEnemigo {
         }
     }
 
-    // ==========================================
-    // NUEVO DIBUJADO (ESTILO TAXI)
-    // ==========================================
     public void dibujar(Graphics g) {
         if (!activo) return;
 
@@ -147,7 +144,7 @@ public class CarroEnemigo {
         int centroY = y + alto / 2;
         g2d.translate(centroX, centroY);
 
-        // Ajustamos la rotación visual según la dirección
+
         double anguloVisual = 0;
         switch (direccion) {
             case 0: anguloVisual = Math.PI; break;       // Abajo
@@ -214,7 +211,7 @@ public class CarroEnemigo {
         g2d.fillRoundRect(ancho - 14, alto - 2, 6, 4, 2, 2);
 
         // === 5. ZONA DELANTERA (Faros) ===
-        // Luces delanteras (Amarillo claro/blanco)
+
         g2d.setColor(new Color(255, 255, 200));
         g2d.fillRoundRect(4, 2, 8, 4, 2, 2);
         g2d.fillRoundRect(ancho - 12, 2, 8, 4, 2, 2);
@@ -225,7 +222,7 @@ public class CarroEnemigo {
         g2d.setTransform(oldTransform);
     }
 
-    // Método simplificado para dibujar las ruedas (sin radios complejos)
+
     private void dibujarRueda(Graphics2D g, int rx, int ry, int w, int h) {
         g.setColor(new Color(30, 30, 30));
         g.fillRoundRect(rx - w / 2, ry - h / 2, w, h, 4, 4);
@@ -239,7 +236,7 @@ public class CarroEnemigo {
     }
 
     public Rectangle getBounds() {
-        // Ajustamos la caja de colisión para que sea un poco más permisiva (5 px más pequeña)
+
         return new Rectangle(x + 5, y + 5, ancho - 10, alto - 10);
     }
 

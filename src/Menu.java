@@ -14,7 +14,7 @@ public class Menu extends JFrame implements ActionListener {
     private JComboBox<String> comboDificultad;
     private JButton btnIniciar, btnEstadisticas, btnSalir;
 
-    // El registro es estático para que persista aunque se cierren y abran menús
+
     private static Map<String, Integer> registroPuntos = new HashMap<>();
     private final Color AMARILLO_TAXI = new Color(253, 216, 53);
     private final Color NEGRO_URBANO = new Color(33, 33, 33);
@@ -120,7 +120,7 @@ public class Menu extends JFrame implements ActionListener {
                 ventanaJuego.addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosed(WindowEvent e) {
-                        // Al cerrar el juego, creamos un nuevo menú para ver los puntos actualizados
+
                         new Menu().setVisible(true);
                     }
                 });

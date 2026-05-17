@@ -26,7 +26,7 @@ public class Taxi {
     public Taxi(double x, double y, int velInicial) {
         this.x = x;
         this.y = y;
-        this.velocidadActual = velInicial; // Usamos solo la nueva variable
+        this.velocidadActual = velInicial;
         this.angulo = Math.PI / 2;
     }
 
@@ -42,7 +42,7 @@ public class Taxi {
         if (velocidadActual < -20) velocidadActual = -20;
     }
 
-    // Faltaba este método para que el carro pierda velocidad si sueltas la 'W'
+
     public void aplicarFriccion() {
         if (velocidadActual > 0) {
             velocidadActual -= FRICCION;
@@ -109,7 +109,7 @@ public class Taxi {
     public int getX() { return (int)x; }
     public int getY() { return (int)y; }
 
-    // Retornamos la velocidad parseada a int para la interfaz gráfica
+
     public int getVelocidad() { return (int) velocidadActual; }
 
     public int getAncho() { return ancho; }

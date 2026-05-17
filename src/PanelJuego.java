@@ -12,8 +12,9 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
     private Cliente cliente;
     private Rectangle destinoPasajero;
     private boolean tienePasajero = false;
-    private String nombreJugador;
+    private boolean esperandoCambioEscenario = false;
 
+    private String nombreJugador;
     private enum Estado { JUGANDO, PAUSADO, GAMEOVER }
     private Estado estadoActual = Estado.JUGANDO;
 
@@ -51,161 +52,55 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
     private void reiniciarJuego() {
         int spawnX = anchoPantalla / 2;
         int spawnY = altoPantalla / 2;
+        if (mapa.getTipoMapa() == 4) spawnX += 100;
 
-        if (mapa.getTipoMapa()==4) {
-            spawnX += 100;
-        }
         taxi = new Taxi(spawnX, spawnY, 0);
         tienePasajero = false;
         destinoPasajero = null;
-
-        adelante = false;
-        atras = false;
-        izquierda = false;
-        derecha = false;
+        esperandoCambioEscenario = false;
+        adelante = atras = izquierda = derecha = false;
 
         generarMundo();
         estadoActual = Estado.JUGANDO;
     }
 
-    // =========================================================
-    // NUEVO MÉTODO INTEGRADO: FINALIZAR JUEGO
-    // =========================================================
-    public void finalizarJuego() {
-        // 1. Guardamos los puntos en la lista global de la clase Menu
-        Menu.guardarPuntuacion(this.nombreJugador, taxi.getPuntos());
-
-        // 2. Avisamos al usuario
-        JOptionPane.showMessageDialog(this, "FIN DEL TURNO\nConductor: " + nombreJugador + "\nGanancia: " + taxi.getPuntos() + " pts");
-
-        // 3. Cerramos la ventana actual del juego (esto disparará el retorno al menú)
-        Window win = SwingUtilities.getWindowAncestor(this);
-        if (win != null) {
-            win.dispose();
-        }
-    }
-
     private void generarMundo() {
         senales = mapa.generarSenalesSeguras(6);
         enemigos = mapa.generarEnemigosSeguros(4);
-        if (!tienePasajero) {
-            cliente = mapa.generarClienteSeguro();
-        }
+        if (!tienePasajero) cliente = mapa.generarClienteSeguro();
     }
+
 
     private void generarDestino() {
-        int x = random.nextBoolean() ? 150 : anchoPantalla - 150;
-        int y = random.nextBoolean() ? 150 : altoPantalla - 150;
-        destinoPasajero = new Rectangle(x, y, 50, 50);
+
+        destinoPasajero = mapa.generarDestinoSeguro();
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-
-        mapa.dibujar(g, getWidth(), getHeight());
-
-        if (cliente != null && !tienePasajero) cliente.dibujar(g);
-
-        if (tienePasajero && destinoPasajero != null) {
-            g2d.setColor(new Color(0, 255, 0, 100));
-            g2d.fill(destinoPasajero);
-            g2d.setColor(Color.GREEN);
-            g2d.draw(destinoPasajero);
-        }
-
-        for (CarroEnemigo e : enemigos) e.dibujar(g);
-
-        taxi.dibujar(g);
-        dibujarFlechaDestino(g2d);
-        dibujarInterfaz(g);
-
-        if (estadoActual == Estado.PAUSADO) dibujarMenuPausa(g2d);
-        if (estadoActual == Estado.GAMEOVER) dibujarMenuChoque(g2d);
-    }
-
-    private void dibujarFlechaDestino(Graphics2D g2d) {
-        int targetX = 0, targetY = 0;
-        if (!tienePasajero && cliente != null) {
-            targetX = cliente.getBounds().x; targetY = cliente.getBounds().y;
-        } else if (tienePasajero && destinoPasajero != null) {
-            targetX = destinoPasajero.x; targetY = destinoPasajero.y;
-        } else return;
-
-        int tx = taxi.getX(); int ty = taxi.getY();
-        double angulo = Math.atan2(targetY - ty, targetX - tx);
-
-        AffineTransform old = g2d.getTransform();
-        g2d.translate(tx + (int)(Math.cos(angulo) * 60), ty + (int)(Math.sin(angulo) * 60));
-        g2d.rotate(angulo);
-        g2d.setColor(Color.GREEN);
-        g2d.fillPolygon(new int[]{0, -15, -15}, new int[]{0, -10, 10}, 3);
-        g2d.setTransform(old);
-    }
-
-    private void dibujarInterfaz(Graphics g) {
-        g.setColor(new Color(0, 0, 0, 200));
-        g.fillRect(10, 10, 220, 110);
-        g.setColor(AMARILLO_TAXI);
-        g.drawRect(10, 10, 220, 110);
-        g.setFont(new Font("Arial", Font.BOLD, 14));
-        g.drawString("CONDUCTOR: " + nombreJugador, 20, 30);
-        g.setColor(Color.WHITE);
-        g.drawString("PUNTOS: " + taxi.getPuntos(), 20, 55);
-        g.drawString("VELOCIDAD: " + taxi.getVelocidad() + " km/h", 20, 80);
-        g.setColor(tienePasajero ? Color.GREEN : AMARILLO_TAXI);
-        g.drawString(tienePasajero ? "¡LLEVA AL PASAJERO!" : "BUSCANDO SERVICIO...", 20, 105);
-    }
-
-    private void dibujarMenuPausa(Graphics2D g2d) {
-        g2d.setColor(new Color(0, 0, 0, 180));
-        g2d.fillRect(0, 0, getWidth(), getHeight());
-        g2d.setColor(AMARILLO_TAXI);
-        g2d.setFont(new Font("Impact", Font.PLAIN, 50));
-        g2d.drawString("TURNO PAUSADO", getWidth()/2 - 160, getHeight()/2 - 120);
-        g2d.setFont(new Font("Arial", Font.BOLD, 18));
-        dibujarBoton(g2d, "CONTINUAR", getHeight()/2 - 50, Color.DARK_GRAY);
-        dibujarBoton(g2d, "REINICIAR TURNO", getHeight()/2 + 20, new Color(50, 50, 150));
-        dibujarBoton(g2d, "SALIR A LA CENTRAL", getHeight()/2 + 90, new Color(150, 0, 0));
-    }
-
-    private void dibujarMenuChoque(Graphics2D g2d) {
-        g2d.setColor(new Color(0, 0, 0, 220));
-        g2d.fillRect(0, 0, getWidth(), getHeight());
-        g2d.setColor(new Color(255, 50, 50));
-        g2d.setFont(new Font("Impact", Font.PLAIN, 50));
-        g2d.drawString("¡SERVICIO TERMINADO!", getWidth()/2 - 230, getHeight()/2 - 80);
-        g2d.setFont(new Font("Arial", Font.BOLD, 20));
-        dibujarBoton(g2d, "REINTENTAR", getHeight()/2, Color.DARK_GRAY);
-        dibujarBoton(g2d, "SALIR A LA CENTRAL", getHeight()/2 + 70, new Color(150, 0, 0));
-    }
-
-    private void dibujarBoton(Graphics2D g2d, String texto, int y, Color color) {
-        int anchoB = 280; int altoB = 50; int x = getWidth()/2 - anchoB/2;
-        g2d.setColor(color); g2d.fillRoundRect(x, y, anchoB, altoB, 15, 15);
-        g2d.setColor(Color.WHITE); g2d.drawRoundRect(x, y, anchoB, altoB, 15, 15);
-        g2d.drawString(texto, x + 40, y + 32);
-    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (estadoActual == Estado.JUGANDO) actualizarLogica();
+        if (estadoActual == Estado.JUGANDO) {
+            actualizarLogica();
+            mapa.actualizar();
+        }
         repaint();
     }
 
     private void actualizarLogica() {
+        // Movimiento
         if (adelante) taxi.acelerar(); else if (atras) taxi.frenar(); else taxi.aplicarFriccion();
         if (izquierda) taxi.girarIzquierda();
         if (derecha) taxi.girarDerecha();
 
         taxi.moverAdelante();
 
+        // Colisiones con el mapa
         if (mapa.chocaConEstructura(taxi.getBounds())) {
             estadoActual = Estado.GAMEOVER;
             return;
         }
 
+        // Enemigos
         for (CarroEnemigo enemigo : enemigos) {
             enemigo.mover(mapa, getWidth(), getHeight());
             if (taxi.getBounds().intersects(enemigo.getBounds())) {
@@ -221,12 +116,28 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
 
     private void verificarSenales() {
         for (SenalTransito s : senales) {
-            Rectangle zonaInfluencia = new Rectangle(s.getX() - 40, s.getY() - 40, 80, 80);
+
+            Rectangle zonaInfluencia = new Rectangle(s.getX() - 30, s.getY() - 30, 60, 60);
+
             if (taxi.getBounds().intersects(zonaInfluencia)) {
-                if (taxi.getVelocidad() > 5 && !evaluandoPare) {
-                    evaluandoPare = true;
-                    tiempoInicioPare = System.currentTimeMillis();
-                    zonaPareActual = zonaInfluencia;
+
+                // MULTA DE SEMÁFORO
+                if (s.getSubTipo() == SenalTransito.SEMAFORO) {
+                    if (s.getEstado() == SenalTransito.ROJO && s.isActiva()) {
+                        if (taxi.getVelocidad() > 5) {
+                            taxi.restarPuntos(100);
+                            s.setActiva(false); // Evita multas múltiples seguidas
+                            System.out.println("Multa: ¡Rojo! -100 pts");
+                        }
+                    }
+                }
+                // MULTA DE PARE
+                else if (s.getSubTipo() == SenalTransito.PARE) {
+                    if (taxi.getVelocidad() > 5 && !evaluandoPare) {
+                        evaluandoPare = true;
+                        tiempoInicioPare = System.currentTimeMillis();
+                        zonaPareActual = zonaInfluencia;
+                    }
                 }
             }
         }
@@ -235,21 +146,101 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
             if (taxi.getVelocidad() <= 5) {
                 evaluandoPare = false;
             } else if (zonaPareActual != null && !zonaPareActual.intersects(taxi.getBounds())) {
-                if (System.currentTimeMillis() - tiempoInicioPare < 4000) {
+                if (System.currentTimeMillis() - tiempoInicioPare < 2000) {
                     taxi.restarPuntos(50);
+                    System.out.println("Multa: No paraste en el PARE -50 pts");
                 }
                 evaluandoPare = false;
             }
         }
     }
 
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        mapa.dibujar(g, getWidth(), getHeight());
+        if (cliente != null && !tienePasajero) cliente.dibujar(g);
+        if (tienePasajero && destinoPasajero != null && !esperandoCambioEscenario) {
+            g2d.setColor(new Color(0, 255, 0, 100));
+            g2d.fill(destinoPasajero);
+        }
+        for (CarroEnemigo e : enemigos) e.dibujar(g);
+        taxi.dibujar(g);
+        dibujarFlechaDestino(g2d);
+        dibujarInterfaz(g);
+        if (estadoActual == Estado.PAUSADO) dibujarMenuPausa(g2d);
+        if (estadoActual == Estado.GAMEOVER) dibujarMenuChoque(g2d);
+    }
+
+    private void dibujarFlechaDestino(Graphics2D g2d) {
+        int targetX, targetY;
+        if (!tienePasajero && cliente != null) {
+            targetX = cliente.getBounds().x; targetY = cliente.getBounds().y;
+        } else if (tienePasajero && destinoPasajero != null && !esperandoCambioEscenario) {
+            targetX = destinoPasajero.x; targetY = destinoPasajero.y;
+        } else return;
+
+        double angulo = Math.atan2(targetY - taxi.getY(), targetX - taxi.getX());
+        AffineTransform old = g2d.getTransform();
+        g2d.translate(taxi.getX() + (int)(Math.cos(angulo) * 60), taxi.getY() + (int)(Math.sin(angulo) * 60));
+        g2d.rotate(angulo);
+        g2d.setColor(Color.GREEN);
+        g2d.fillPolygon(new int[]{0, -15, -15}, new int[]{0, -10, 10}, 3);
+        g2d.setTransform(old);
+    }
+
+    private void dibujarInterfaz(Graphics g) {
+        g.setColor(new Color(0, 0, 0, 200));
+        g.fillRect(10, 10, 220, 110);
+        g.setColor(AMARILLO_TAXI);
+        g.drawRect(10, 10, 220, 110);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        g.drawString("CONDUCTOR: " + nombreJugador, 20, 30);
+        g.setColor(Color.WHITE);
+        g.drawString("PUNTOS: " + taxi.getPuntos(), 20, 55);
+        g.drawString("VELOCIDAD: " + (int)taxi.getVelocidad() + " km/h", 20, 80);
+        if (tienePasajero) {
+            g.setColor(esperandoCambioEscenario ? Color.ORANGE : Color.GREEN);
+            g.drawString(esperandoCambioEscenario ? "¡CAMBIA DE BARRIO!" : "¡LLEGA AL DESTINO!", 20, 105);
+        } else {
+            g.setColor(AMARILLO_TAXI);
+            g.drawString("BUSCANDO CLIENTE...", 20, 105);
+        }
+    }
+
+    private void dibujarMenuPausa(Graphics2D g2d) {
+        g2d.setColor(new Color(0, 0, 0, 180)); g2d.fillRect(0, 0, getWidth(), getHeight());
+        g2d.setColor(AMARILLO_TAXI); g2d.setFont(new Font("Impact", Font.PLAIN, 50));
+        g2d.drawString("TURNO PAUSADO", getWidth()/2 - 160, getHeight()/2 - 120);
+        dibujarBoton(g2d, "CONTINUAR", getHeight()/2 - 50, Color.DARK_GRAY);
+        dibujarBoton(g2d, "REINICIAR", getHeight()/2 + 20, new Color(50, 50, 150));
+        dibujarBoton(g2d, "SALIR", getHeight()/2 + 90, new Color(150, 0, 0));
+    }
+
+    private void dibujarMenuChoque(Graphics2D g2d) {
+        g2d.setColor(new Color(0, 0, 0, 220)); g2d.fillRect(0, 0, getWidth(), getHeight());
+        g2d.setColor(new Color(255, 50, 50)); g2d.setFont(new Font("Impact", Font.PLAIN, 50));
+        g2d.drawString("¡SERVICIO TERMINADO!", getWidth()/2 - 230, getHeight()/2 - 80);
+        dibujarBoton(g2d, "REINTENTAR", getHeight()/2, Color.DARK_GRAY);
+        dibujarBoton(g2d, "SALIR", getHeight()/2 + 70, new Color(150, 0, 0));
+    }
+
+    private void dibujarBoton(Graphics2D g2d, String texto, int y, Color color) {
+        int anchoB = 280, altoB = 50, x = getWidth()/2 - anchoB/2;
+        g2d.setColor(color); g2d.fillRoundRect(x, y, anchoB, altoB, 15, 15);
+        g2d.setColor(Color.WHITE); g2d.drawRoundRect(x, y, anchoB, altoB, 15, 15);
+        g2d.setFont(new Font("Arial", Font.BOLD, 18));
+        g2d.drawString(texto, x + 40, y + 32);
+    }
+
     private void verificarPasajero() {
         if (!tienePasajero && cliente != null && taxi.getBounds().intersects(cliente.getBounds()) && taxi.getVelocidad() < 10) {
             cliente.recoger();
             tienePasajero = true;
-            generarDestino();
+            esperandoCambioEscenario = true;
         }
-        if (tienePasajero && destinoPasajero != null && taxi.getBounds().intersects(destinoPasajero) && taxi.getVelocidad() < 10) {
+        if (tienePasajero && !esperandoCambioEscenario && destinoPasajero != null && taxi.getBounds().intersects(destinoPasajero) && taxi.getVelocidad() < 10) {
             taxi.sumarPuntos(100);
             tienePasajero = false;
             destinoPasajero = null;
@@ -267,45 +258,46 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
         if (cambio) {
             mapa.generarMapa(lado);
             generarMundo();
-            if (tienePasajero) generarDestino();
+            if (tienePasajero) {
+                esperandoCambioEscenario = false;
+                generarDestino(); // Aquí llamará a la nueva versión segura
+            }
         }
     }
 
-    @Override
-    public void mousePressed(MouseEvent e) {
-        int mx = e.getX();
-        int my = e.getY();
-        int centroX = getWidth() / 2;
+    public void finalizarJuego() {
+        Menu.guardarPuntuacion(this.nombreJugador, taxi.getPuntos());
+        JOptionPane.showMessageDialog(this, "FIN DEL TURNO\nConductor: " + nombreJugador + "\nGanancia: " + taxi.getPuntos() + " pts");
+        Window win = SwingUtilities.getWindowAncestor(this);
+        if (win != null) win.dispose();
+    }
 
+    @Override public void mousePressed(MouseEvent e) {
+        int mx = e.getX(); int my = e.getY(); int centroX = getWidth() / 2;
         if (estadoActual == Estado.PAUSADO) {
             if (mx > centroX - 140 && mx < centroX + 140) {
                 if (my > getHeight()/2 - 50 && my < getHeight()/2) estadoActual = Estado.JUGANDO;
                 else if (my > getHeight()/2 + 20 && my < getHeight()/2 + 70) reiniciarJuego();
-                else if (my > getHeight()/2 + 90 && my < getHeight()/2 + 140) finalizarJuego(); // Usar nueva función
+                else if (my > getHeight()/2 + 90 && my < getHeight()/2 + 140) finalizarJuego();
             }
         } else if (estadoActual == Estado.GAMEOVER) {
             if (mx > centroX - 140 && mx < centroX + 140) {
                 if (my > getHeight()/2 && my < getHeight()/2 + 50) reiniciarJuego();
-                else if (my > getHeight()/2 + 70 && my < getHeight()/2 + 120) finalizarJuego(); // Usar nueva función
+                else if (my > getHeight()/2 + 70 && my < getHeight()/2 + 120) finalizarJuego();
             }
         }
     }
 
-    @Override
-    public void keyPressed(KeyEvent e) {
+    @Override public void keyPressed(KeyEvent e) {
         int t = e.getKeyCode();
-        if (t == KeyEvent.VK_ESCAPE) {
-            if (estadoActual == Estado.JUGANDO) estadoActual = Estado.PAUSADO;
-            else if (estadoActual == Estado.PAUSADO) estadoActual = Estado.JUGANDO;
-        }
+        if (t == KeyEvent.VK_ESCAPE) estadoActual = (estadoActual == Estado.JUGANDO) ? Estado.PAUSADO : Estado.JUGANDO;
         if (t == KeyEvent.VK_W || t == KeyEvent.VK_UP) adelante = true;
         if (t == KeyEvent.VK_S || t == KeyEvent.VK_DOWN) atras = true;
         if (t == KeyEvent.VK_A || t == KeyEvent.VK_LEFT) izquierda = true;
         if (t == KeyEvent.VK_D || t == KeyEvent.VK_RIGHT) derecha = true;
     }
 
-    @Override
-    public void keyReleased(KeyEvent e) {
+    @Override public void keyReleased(KeyEvent e) {
         int t = e.getKeyCode();
         if (t == KeyEvent.VK_W || t == KeyEvent.VK_UP) adelante = false;
         if (t == KeyEvent.VK_S || t == KeyEvent.VK_DOWN) atras = false;

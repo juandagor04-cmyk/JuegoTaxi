@@ -49,21 +49,21 @@ public class Cliente {
             if (animacionLlamada > 60) animacionLlamada = 0;
         }
 
-        // 1. Sombra general (Círculo difuminado debajo)
+        // 1. Sombra general
         g2d.setColor(new Color(0, 0, 0, 60));
         g2d.fillOval(x + 2, y + 2, 24, 24);
 
-        // 2. Hombros / Torso (Visto desde arriba es un rectángulo redondeado u óvalo)
+        // 2. Hombros / Torso
         g2d.setColor(coloresRopa[tipoCliente]);
         g2d.fillRoundRect(x + 4, y + 6, 18, 14, 8, 8);
 
         // 3. Brazos
-        // Brazo izquierdo (quieto junto al cuerpo)
+        // Brazo izquierdo
         g2d.fillRoundRect(x + 4, y + 4, 6, 16, 4, 4);
 
-        // Brazo derecho (animado - extendiéndose para llamar al taxi)
+        // Brazo derecho
         if (llamando) {
-            // El brazo se mueve hacia adelante y hacia atrás
+
             int offsetBrazo = (int) (Math.sin(animacionLlamada * 0.2) * 4);
 
             // Manga extendida
@@ -79,22 +79,22 @@ public class Cliente {
             g2d.fillRoundRect(x + 14, y + 16, 6, 6, 3, 3);
         }
 
-        // 4. Cabeza (Un círculo visto desde arriba)
+        // 4. Cabeza
         // Pelo
         g2d.setColor(new Color(60, 40, 20)); // Castaño oscuro
         g2d.fillOval(x + 6, y + 5, 14, 14);
 
-        // Piel (Cara apuntando ligeramente hacia la calle / derecha)
+        // Piel
         g2d.setColor(new Color(255, 220, 180));
         g2d.fillArc(x + 6, y + 5, 14, 14, -70, 140);
 
-        // 5. Maletín o bolso (Visto desde arriba, apoyado en el suelo)
+        // 5. Maletín o bolso
         g2d.setColor(new Color(100, 50, 10));
         g2d.fillRoundRect(x, y + 18, 6, 8, 2, 2);
         g2d.setColor(Color.BLACK);
         g2d.drawRoundRect(x, y + 18, 6, 8, 2, 2);
 
-        // 6. Burbuja de texto "¡Taxi!" (La dejamos como interfaz 2D, se ve perfecta)
+        // 6. Burbuja de texto "¡Taxi!"
         if (llamando && !recogido) {
             // Burbuja
             g2d.setColor(Color.WHITE);
