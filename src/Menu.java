@@ -2,21 +2,24 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import javax.swing.border.EmptyBorder;
 import java.util.HashMap;
 import java.util.Map;
-public class Menu extends JFrame implements ActionListener{
+
+public class Menu extends JFrame implements ActionListener {
 
     private JTextField txtNombre;
-    private JComboBox<String>comboDificultad;
+    private JComboBox<String> comboDificultad;
     private JButton btnIniciar, btnEstadisticas, btnSalir;
 
+    // El registro es estático para que persista aunque se cierren y abran menús
     private static Map<String, Integer> registroPuntos = new HashMap<>();
     private final Color AMARILLO_TAXI = new Color(253, 216, 53);
     private final Color NEGRO_URBANO = new Color(33, 33, 33);
 
-
-    public Menu(){
+    public Menu() {
         setTitle("TaxiGo - Menu Principal");
         setSize(450, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -24,7 +27,7 @@ public class Menu extends JFrame implements ActionListener{
         getContentPane().setBackground(AMARILLO_TAXI);
         setLayout(new BorderLayout());
 
-        //Encabezado
+        // Encabezado
         JPanel panelNorte = new JPanel();
         panelNorte.setBackground(NEGRO_URBANO);
         panelNorte.setPreferredSize(new Dimension(450, 80));
@@ -35,7 +38,7 @@ public class Menu extends JFrame implements ActionListener{
         panelNorte.add(lblTitulo);
         add(panelNorte, BorderLayout.NORTH);
 
-        //Panel Central
+        // Panel Central
         JPanel panelCentro = new JPanel();
         panelCentro.setOpaque(false);
         panelCentro.setLayout(new GridLayout(5, 1, 10, 10));
@@ -100,28 +103,31 @@ public class Menu extends JFrame implements ActionListener{
 
         if (e.getSource() == btnIniciar) {
             String nombre = txtNombre.getText().trim().toUpperCase();
-            String dificultad = (String) comboDificultad.getSelectedItem();
 
             if (nombre.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "¡Oye! El taxi no arranca sin nombre.");
-            } else if (registroPuntos.containsKey(nombre)) {
-                JOptionPane.showMessageDialog(this, "Ese conductor ya está jubilado (Nombre ya usado). Usa otro.");
             } else {
                 // Iniciar juego
                 JFrame ventanaJuego = new JFrame("TaxiGo - En Servicio");
                 PanelJuego panelJuego = new PanelJuego(nombre);
 
-                // Aquí podrías pasar el nombre al panelJuego para guardar los puntos al final
-                // simulamos que al terminar el juego se guarda:
-                // registroPuntos.put(nombre, 0);
-
                 ventanaJuego.add(panelJuego);
                 ventanaJuego.setSize(800, 600);
                 ventanaJuego.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 ventanaJuego.setLocationRelativeTo(null);
+
+                // --- LÓGICA DE RETORNO AL MENÚ ---
+                ventanaJuego.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        // Al cerrar el juego, creamos un nuevo menú para ver los puntos actualizados
+                        new Menu().setVisible(true);
+                    }
+                });
+
                 ventanaJuego.setVisible(true);
 
-                // Cerramos el menú
+                // Cerramos el menú actual
                 this.dispose();
             }
         }
@@ -132,6 +138,7 @@ public class Menu extends JFrame implements ActionListener{
         if (registroPuntos.isEmpty()) {
             sb.append("Aún no hay registros en la central.");
         } else {
+            // Ordenar por puntaje si quieres (opcional)
             registroPuntos.forEach((name, score) -> {
                 sb.append("🚕 ").append(name).append(": ").append(score).append(" pts\n");
             });
@@ -139,22 +146,19 @@ public class Menu extends JFrame implements ActionListener{
         JOptionPane.showMessageDialog(this, sb.toString(), "Estadísticas TaxiGo", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    // Método estático para que el PanelJuego pueda guardar puntos al morir
+    // Método que llamará PanelJuego al morir o terminar
     public static void guardarPuntuacion(String nombre, int puntos) {
-        registroPuntos.put(nombre, puntos);
+        // Guardamos o actualizamos si el nuevo puntaje es mayor
+        if (!registroPuntos.containsKey(nombre) || puntos > registroPuntos.get(nombre)) {
+            registroPuntos.put(nombre, puntos);
+        }
     }
 
     public static void main(String[] args) {
-        // Ejemplo de datos previos
+        // Datos de prueba iniciales
         registroPuntos.put("PEPE", 1500);
         registroPuntos.put("LUCHO", 2300);
 
         SwingUtilities.invokeLater(() -> new Menu().setVisible(true));
     }
 }
-
-
-
-
-
-

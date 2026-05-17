@@ -77,7 +77,7 @@ public class Taxi {
         framesNitrogeno = 5;
     }
 
-    // Ahora los movimientos usan la variable de física correcta (velocidadActual)
+    //Movimiento actual
     public void moverAdelante() {
         x += Math.cos(angulo) * velocidadActual;
         y += Math.sin(angulo) * velocidadActual;

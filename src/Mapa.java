@@ -6,9 +6,8 @@ public class Mapa {
     private int tipoMapa; // 0=Horizontal, 1=Vertical, 2=T, 3=+, 4=Glorieta
     private int[] carriles = {150, 250, 350};
     private Random random = new Random();
-    private int anchoMapa = 800, altoMapa = 600; // Valores por defecto
+    private int anchoMapa = 800, altoMapa = 600;
 
-    // Bordes de la calle
     private int calleLimiteSuperior, calleLimiteInferior, calleLimiteIzquierdo, calleLimiteDerecho;
 
     // Colores
@@ -29,6 +28,7 @@ public class Mapa {
     private ArrayList<Rectangle> casasPos = new ArrayList<>();
     private ArrayList<Color> casasColores = new ArrayList<>();
     private ArrayList<Rectangle> edificiosPos = new ArrayList<>();
+    private ArrayList<SenalTransito> senalesCache = new ArrayList<>();
 
     public Mapa() {
         generarMapa(-1);
@@ -52,84 +52,61 @@ public class Mapa {
         edificiosPos.clear();
     }
 
-    // === ERROR CORREGIDO AQUÍ: Faltaba el return false ===
+    // =========================================================
+    // MÉTODO GENERAR SEÑALES (ACTUALIZADO)
+    // =========================================================
+    public ArrayList<SenalTransito> generarSenalesSeguras(int cantidad) {
+        ArrayList<SenalTransito> senales = new ArrayList<>();
+        int centroX = anchoMapa / 2;
+        int centroY = altoMapa / 2;
+
+        switch (tipoMapa) {
+            case 0: // Recta Horizontal
+                senales.add(new SenalTransito(200, calleLimiteSuperior - 35, SenalTransito.PREVENTIVA, SenalTransito.CURVA));
+                senales.add(new SenalTransito(anchoMapa - 200, calleLimiteInferior + 5, SenalTransito.REGLAMENTARIA, SenalTransito.PARE));
+                break;
+
+            case 1: // Recta Vertical
+                senales.add(new SenalTransito(calleLimiteIzquierdo - 35, 200, SenalTransito.PREVENTIVA, SenalTransito.CRUCE));
+                senales.add(new SenalTransito(calleLimiteDerecho + 5, altoMapa - 200, SenalTransito.REGLAMENTARIA, SenalTransito.PARE));
+                break;
+
+            case 3: // Intersección en +
+                // Agregamos semáforos (Tipo Reglamentaria, Subtipo Semaforo)
+                senales.add(new SenalTransito(centroX - 140, centroY - 140, SenalTransito.REGLAMENTARIA, SenalTransito.SEMAFORO));
+                senales.add(new SenalTransito(centroX + 120, centroY + 120, SenalTransito.REGLAMENTARIA, SenalTransito.SEMAFORO));
+                break;
+
+            case 4: // Glorieta
+                // Pare en las entradas
+                senales.add(new SenalTransito(centroX + 110, centroY - 190, SenalTransito.REGLAMENTARIA, SenalTransito.PARE));
+                senales.add(new SenalTransito(centroX - 140, centroY + 160, SenalTransito.REGLAMENTARIA, SenalTransito.PARE));
+                break;
+
+            default:
+                senales.add(new SenalTransito(100, 100, SenalTransito.PREVENTIVA, SenalTransito.CURVA));
+                break;
+        }
+
+        this.senalesCache = senales;
+        return senales;
+    }
+
     public boolean chocaConEstructura(Rectangle limitesTaxi) {
-        for (Rectangle casa : casasPos) {
-            if (casa.intersects(limitesTaxi)) return true;
-        }
-        for (Rectangle edificio : edificiosPos) {
-            if (edificio.intersects(limitesTaxi)) return true;
-        }
+        for (Rectangle casa : casasPos) if (casa.intersects(limitesTaxi)) return true;
+        for (Rectangle edificio : edificiosPos) if (edificio.intersects(limitesTaxi)) return true;
         for (Point arbol : arbolesPos) {
             Rectangle hitBoxArbol = new Rectangle(arbol.x - 25, arbol.y - 25, 50, 50);
             if (hitBoxArbol.intersects(limitesTaxi)) return true;
         }
-        return false; // <-- Esto era lo que te faltaba
-    }
-
-    public void generarMapa() {
-        generarMapa(-1);
-    }
-
-    public Cliente generarClienteSeguro() {
-        int x = 0, y = 0;
-        int margenAnden = 35;
-
-        if (tipoMapa == 0) {
-            x = 150 + random.nextInt(anchoMapa - 300);
-            y = random.nextBoolean() ? calleLimiteSuperior - margenAnden : calleLimiteInferior + 10;
-        } else if (tipoMapa == 1) {
-            x = random.nextBoolean() ? calleLimiteIzquierdo - margenAnden : calleLimiteDerecho + 10;
-            y = 150 + random.nextInt(altoMapa - 300);
-        } else {
-            x = random.nextBoolean() ? 100 : anchoMapa - 100;
-            y = random.nextBoolean() ? 100 : altoMapa - 100;
+        // Colisión con el centro de la glorieta (pasto central)
+        if (tipoMapa == 4) {
+            int radioInterior = 70;
+            double dx = limitesTaxi.getCenterX() - (anchoMapa / 2);
+            double dy = limitesTaxi.getCenterY() - (altoMapa / 2);
+            if (Math.sqrt(dx*dx + dy*dy) < radioInterior) return true;
         }
-        return new Cliente(x, y);
-    }
-
-    public ArrayList<CarroEnemigo> generarEnemigosSeguros(int cantidad) {
-        ArrayList<CarroEnemigo> enemigos = new ArrayList<>();
-
-        for (int i = 0; i < cantidad; i++) {
-            int vel = 3 + random.nextInt(4);
-            int dir = 0, spawnX = 0, spawnY = 0;
-            int carrilIndex = random.nextInt(carriles.length);
-
-            if (tipoMapa == 0 || tipoMapa == 2) {
-                dir = random.nextBoolean() ? 2 : 3;
-                spawnX = (dir == 2) ? -100 : anchoMapa + 100;
-                spawnY = calleLimiteSuperior + 30 + (carrilIndex * 60);
-            } else {
-                dir = random.nextBoolean() ? 0 : 1;
-                spawnY = (dir == 0) ? -100 : altoMapa + 100;
-                spawnX = calleLimiteIzquierdo + 30 + (carrilIndex * 60);
-            }
-            enemigos.add(new CarroEnemigo(spawnX, spawnY, vel, dir, carrilIndex, carriles));
-        }
-        return enemigos;
-    }
-
-    public ArrayList<SenalTransito> generarSenalesSeguras(int cantidad) {
-        ArrayList<SenalTransito> senales = new ArrayList<>();
-        for (int i = 0; i < cantidad; i++) {
-            int tipo = random.nextInt(3);
-            int valor = random.nextInt(5);
-            int x = 0, y = 0;
-
-            if (tipoMapa == 0) {
-                x = 100 + random.nextInt(anchoMapa - 200);
-                y = random.nextBoolean() ? calleLimiteSuperior - 25 : calleLimiteInferior + 5;
-            } else if (tipoMapa == 1) {
-                x = random.nextBoolean() ? calleLimiteIzquierdo - 25 : calleLimiteDerecho + 5;
-                y = 100 + random.nextInt(altoMapa - 200);
-            } else {
-                x = random.nextBoolean() ? 250 : anchoMapa - 250;
-                y = random.nextBoolean() ? 200 : altoMapa - 200;
-            }
-            senales.add(new SenalTransito(x, y, tipo, valor));
-        }
-        return senales;
+        return false;
     }
 
     public void dibujar(Graphics g, int ancho, int alto) {
@@ -139,7 +116,6 @@ public class Mapa {
 
         g.setColor(TIERRA);
         g.fillRect(0, 0, ancho, alto);
-
         dibujarBaseCesped(g2d, ancho, alto);
 
         switch (tipoMapa) {
@@ -151,7 +127,14 @@ public class Mapa {
         }
 
         dibujarDecoraciones(g2d);
+
+        // El mapa dibuja las señales que tiene guardadas
+        for (SenalTransito s : senalesCache) {
+            s.dibujar(g);
+        }
     }
+
+    // --- MÉTODOS DE DIBUJO ---
 
     private void dibujarBaseCesped(Graphics2D g, int ancho, int alto) {
         g.setColor(CESPED);
@@ -190,12 +173,6 @@ public class Mapa {
         g.setStroke(new BasicStroke(2));
         g.drawLine(0, centroY - 2, ancho, centroY - 2);
         g.drawLine(0, centroY + 2, ancho, centroY + 2);
-        g.setColor(LINEA_BLANCA);
-        float[] dash = {15.0f, 15.0f};
-        g.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
-        g.drawLine(0, inicioCalle + (anchoCalle / 4), ancho, inicioCalle + (anchoCalle / 4));
-        g.drawLine(0, inicioCalle + (anchoCalle / 4) * 3, ancho, inicioCalle + (anchoCalle / 4) * 3);
-        g.setStroke(new BasicStroke(1));
         dibujarAnden(g, 0, inicioCalle - 30, ancho, 30, true);
         dibujarAnden(g, 0, inicioCalle + anchoCalle, ancho, 30, false);
         calleLimiteSuperior = inicioCalle;
@@ -221,12 +198,6 @@ public class Mapa {
         g.setStroke(new BasicStroke(2));
         g.drawLine(centroX - 2, 0, centroX - 2, alto);
         g.drawLine(centroX + 2, 0, centroX + 2, alto);
-        g.setColor(LINEA_BLANCA);
-        float[] dash = {15.0f, 15.0f};
-        g.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
-        g.drawLine(inicioCalle + (anchoCalle / 4), 0, inicioCalle + (anchoCalle / 4), alto);
-        g.drawLine(inicioCalle + (anchoCalle / 4) * 3, 0, inicioCalle + (anchoCalle / 4) * 3, alto);
-        g.setStroke(new BasicStroke(1));
         dibujarAnden(g, inicioCalle - 30, 0, 30, alto, true);
         dibujarAnden(g, inicioCalle + anchoCalle, 0, 30, alto, false);
         calleLimiteSuperior = 0;
@@ -246,7 +217,6 @@ public class Mapa {
         g.setColor(CESPED);
         g.fillRect(0, 0, centroX - anchoCalle/2 - 30, centroY - anchoCalle/2 - 30);
         g.fillRect(centroX + anchoCalle/2 + 30, 0, ancho, centroY - anchoCalle/2 - 30);
-        dibujarLineasInterseccion(g2d, ancho, alto, centroX, centroY, anchoCalle, true);
         dibujarAnden(g, 0, centroY + anchoCalle / 2, ancho, 30, false);
         dibujarAnden(g, centroX + anchoCalle / 2, 0, 30, centroY - anchoCalle/2, false);
         dibujarAnden(g, centroX - anchoCalle / 2 - 30, 0, 30, centroY - anchoCalle/2, true);
@@ -268,14 +238,11 @@ public class Mapa {
         g.fillRect(centroX + gap, 0, ancho, centroY - gap);
         g.fillRect(0, centroY + gap, centroX - gap, alto);
         g.fillRect(centroX + gap, centroY + gap, ancho, alto);
-        dibujarLineasInterseccion(g2d, ancho, alto, centroX, centroY, anchoCalle, false);
         dibujarAndenCruce(g2d, centroX, centroY, anchoCalle, gap);
         calleLimiteSuperior = 0; calleLimiteInferior = alto; calleLimiteIzquierdo = 0; calleLimiteDerecho = ancho;
-        if (casasPos.isEmpty() && edificiosPos.isEmpty()) {
+        if (casasPos.isEmpty()) {
             edificiosPos.add(new Rectangle(20, 20, centroX - gap - 40, centroY - gap - 40));
             generarParque(centroX + gap + 20, 20, ancho - (centroX + gap + 40), centroY - gap - 40);
-            generarLineaDecoracion(20, centroY + gap + 20, centroX - gap - 40, 150, false);
-            generarBloqueDecoracion(centroX + gap + 20, centroY + gap + 20, ancho - (centroX + gap + 40), alto - (centroY + gap + 40), false);
         }
     }
 
@@ -288,16 +255,11 @@ public class Mapa {
 
         dibujarTexturaAsfalto(g, centroX - anchoCalle/2, 0, anchoCalle, alto);
         dibujarTexturaAsfalto(g, 0, centroY - anchoCalle/2, ancho, anchoCalle);
-
         g.setColor(ASFALTO);
         g.fillOval(centroX - radioExterior, centroY - radioExterior, radioExterior * 2, radioExterior * 2);
 
         g.setColor(LINEA_BLANCA);
-        Stroke oldStroke = g.getStroke();
-        float[] dash = {10.0f, 10.0f};
-        g.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
         g.drawOval(centroX - (radioExterior-40), centroY - (radioExterior-40), (radioExterior-40) * 2, (radioExterior-40) * 2);
-        g.setStroke(oldStroke);
 
         g.setColor(CESPED);
         g.fillOval(centroX - radioInterior, centroY - radioInterior, radioInterior * 2, radioInterior * 2);
@@ -306,15 +268,11 @@ public class Mapa {
         g.drawOval(centroX - radioInterior, centroY - radioInterior, radioInterior * 2, radioInterior * 2);
         g.setStroke(new BasicStroke(1));
 
-        calleLimiteSuperior = 0;
-        calleLimiteInferior = alto;
-        calleLimiteIzquierdo = 0;
-        calleLimiteDerecho = ancho;
+        calleLimiteSuperior = 0; calleLimiteInferior = alto; calleLimiteIzquierdo = 0; calleLimiteDerecho = ancho;
 
         if(arbolesPos.isEmpty()){
             arbolesPos.add(new Point(centroX - 20, centroY - 20));
             arbolesPos.add(new Point(centroX + 20, centroY + 10));
-            arbolesPos.add(new Point(centroX, centroY + 20));
         }
     }
 
@@ -328,12 +286,6 @@ public class Mapa {
         g.setColor(ANDEN);
         g.fillRect(centroX - gap - 30, 0, 30, altoMapa);
         g.fillRect(0, centroY - gap - 30, anchoMapa, 30);
-    }
-
-    private void dibujarLineasInterseccion(Graphics2D g, int ancho, int alto, int centroX, int centroY, int anchoCalle, boolean esT) {
-        g.setColor(LINEA_BLANCA);
-        g.fillRect(centroX - anchoCalle/2 - 50, centroY - anchoCalle/2, 10, anchoCalle);
-        g.fillRect(centroX + anchoCalle/2 + 40, centroY - anchoCalle/2, 10, anchoCalle);
     }
 
     private void dibujarDecoraciones(Graphics2D g) {
@@ -384,15 +336,41 @@ public class Mapa {
         }
     }
 
-    public boolean estaDentroDeCalle(int x, int y) {
-        return (x >= calleLimiteIzquierdo && x <= calleLimiteDerecho &&
-                y >= calleLimiteSuperior && y <= calleLimiteInferior);
+    public Cliente generarClienteSeguro() {
+        int x = 0, y = 0;
+        int margenAnden = 35;
+        if (tipoMapa == 0) {
+            x = 150 + random.nextInt(anchoMapa - 300);
+            y = random.nextBoolean() ? calleLimiteSuperior - margenAnden : calleLimiteInferior + 10;
+        } else if (tipoMapa == 1) {
+            x = random.nextBoolean() ? calleLimiteIzquierdo - margenAnden : calleLimiteDerecho + 10;
+            y = 150 + random.nextInt(altoMapa - 300);
+        } else {
+            x = random.nextBoolean() ? 100 : anchoMapa - 100;
+            y = random.nextBoolean() ? 100 : altoMapa - 100;
+        }
+        return new Cliente(x, y);
+    }
+
+    public ArrayList<CarroEnemigo> generarEnemigosSeguros(int cantidad) {
+        ArrayList<CarroEnemigo> enemigos = new ArrayList<>();
+        for (int i = 0; i < cantidad; i++) {
+            int vel = 3 + random.nextInt(4);
+            int dir = 0, spawnX = 0, spawnY = 0;
+            int carrilIndex = random.nextInt(carriles.length);
+            if (tipoMapa == 0 || tipoMapa == 2) {
+                dir = random.nextBoolean() ? 2 : 3;
+                spawnX = (dir == 2) ? -100 : anchoMapa + 100;
+                spawnY = calleLimiteSuperior + 30 + (carrilIndex * 60);
+            } else {
+                dir = random.nextBoolean() ? 0 : 1;
+                spawnY = (dir == 0) ? -100 : altoMapa + 100;
+                spawnX = calleLimiteIzquierdo + 30 + (carrilIndex * 60);
+            }
+            enemigos.add(new CarroEnemigo(spawnX, spawnY, vel, dir, carrilIndex, carriles));
+        }
+        return enemigos;
     }
 
     public int getTipoMapa() { return tipoMapa; }
-    public int[] getCarriles() { return carriles; }
-    public int getCalleLimiteSuperior() { return calleLimiteSuperior; }
-    public int getCalleLimiteInferior() { return calleLimiteInferior; }
-    public int getCalleLimiteIzquierdo() { return calleLimiteIzquierdo; }
-    public int getCalleLimiteDerecho() { return calleLimiteDerecho; }
 }

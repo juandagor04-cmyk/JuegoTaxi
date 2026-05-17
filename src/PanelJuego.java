@@ -49,11 +49,40 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
     }
 
     private void reiniciarJuego() {
-        taxi = new Taxi(anchoPantalla / 2, altoPantalla / 2, 0);
+        int spawnX = anchoPantalla / 2;
+        int spawnY = altoPantalla / 2;
+
+        if (mapa.getTipoMapa()==4) {
+            spawnX += 100;
+        }
+        taxi = new Taxi(spawnX, spawnY, 0);
         tienePasajero = false;
         destinoPasajero = null;
+
+        adelante = false;
+        atras = false;
+        izquierda = false;
+        derecha = false;
+
         generarMundo();
         estadoActual = Estado.JUGANDO;
+    }
+
+    // =========================================================
+    // NUEVO MÉTODO INTEGRADO: FINALIZAR JUEGO
+    // =========================================================
+    public void finalizarJuego() {
+        // 1. Guardamos los puntos en la lista global de la clase Menu
+        Menu.guardarPuntuacion(this.nombreJugador, taxi.getPuntos());
+
+        // 2. Avisamos al usuario
+        JOptionPane.showMessageDialog(this, "FIN DEL TURNO\nConductor: " + nombreJugador + "\nGanancia: " + taxi.getPuntos() + " pts");
+
+        // 3. Cerramos la ventana actual del juego (esto disparará el retorno al menú)
+        Window win = SwingUtilities.getWindowAncestor(this);
+        if (win != null) {
+            win.dispose();
+        }
     }
 
     private void generarMundo() {
@@ -86,14 +115,12 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
             g2d.draw(destinoPasajero);
         }
 
-        for (SenalTransito s : senales) s.dibujar(g);
         for (CarroEnemigo e : enemigos) e.dibujar(g);
 
         taxi.dibujar(g);
         dibujarFlechaDestino(g2d);
         dibujarInterfaz(g);
 
-        // Capas de Menú
         if (estadoActual == Estado.PAUSADO) dibujarMenuPausa(g2d);
         if (estadoActual == Estado.GAMEOVER) dibujarMenuChoque(g2d);
     }
@@ -134,11 +161,9 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
     private void dibujarMenuPausa(Graphics2D g2d) {
         g2d.setColor(new Color(0, 0, 0, 180));
         g2d.fillRect(0, 0, getWidth(), getHeight());
-
         g2d.setColor(AMARILLO_TAXI);
         g2d.setFont(new Font("Impact", Font.PLAIN, 50));
         g2d.drawString("TURNO PAUSADO", getWidth()/2 - 160, getHeight()/2 - 120);
-
         g2d.setFont(new Font("Arial", Font.BOLD, 18));
         dibujarBoton(g2d, "CONTINUAR", getHeight()/2 - 50, Color.DARK_GRAY);
         dibujarBoton(g2d, "REINICIAR TURNO", getHeight()/2 + 20, new Color(50, 50, 150));
@@ -174,7 +199,7 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
         if (izquierda) taxi.girarIzquierda();
         if (derecha) taxi.girarDerecha();
 
-        taxi.moverAdelante(); // Asegura el movimiento físico
+        taxi.moverAdelante();
 
         if (mapa.chocaConEstructura(taxi.getBounds())) {
             estadoActual = Estado.GAMEOVER;
@@ -254,30 +279,22 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
 
         if (estadoActual == Estado.PAUSADO) {
             if (mx > centroX - 140 && mx < centroX + 140) {
-                if (my > getHeight()/2 - 50 && my < getHeight()/2) estadoActual = Estado.JUGANDO; // Continuar
-                else if (my > getHeight()/2 + 20 && my < getHeight()/2 + 70) reiniciarJuego(); // Reiniciar
-                else if (my > getHeight()/2 + 90 && my < getHeight()/2 + 140) salir(); // Salir
+                if (my > getHeight()/2 - 50 && my < getHeight()/2) estadoActual = Estado.JUGANDO;
+                else if (my > getHeight()/2 + 20 && my < getHeight()/2 + 70) reiniciarJuego();
+                else if (my > getHeight()/2 + 90 && my < getHeight()/2 + 140) finalizarJuego(); // Usar nueva función
             }
         } else if (estadoActual == Estado.GAMEOVER) {
             if (mx > centroX - 140 && mx < centroX + 140) {
                 if (my > getHeight()/2 && my < getHeight()/2 + 50) reiniciarJuego();
-                else if (my > getHeight()/2 + 70 && my < getHeight()/2 + 120) salir();
+                else if (my > getHeight()/2 + 70 && my < getHeight()/2 + 120) finalizarJuego(); // Usar nueva función
             }
-        }
-    }
-
-    private void salir() {
-        Window win = SwingUtilities.getWindowAncestor(this);
-        if (win != null) {
-            win.dispose();
-            new Menu().setVisible(true);
         }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
         int t = e.getKeyCode();
-        if (t == KeyEvent.VK_ESCAPE) { // Tecla ESC para pausar
+        if (t == KeyEvent.VK_ESCAPE) {
             if (estadoActual == Estado.JUGANDO) estadoActual = Estado.PAUSADO;
             else if (estadoActual == Estado.PAUSADO) estadoActual = Estado.JUGANDO;
         }
@@ -296,7 +313,6 @@ public class PanelJuego extends JPanel implements ActionListener, KeyListener, M
         if (t == KeyEvent.VK_D || t == KeyEvent.VK_RIGHT) derecha = false;
     }
 
-    // Métodos obligatorios vacíos
     @Override public void keyTyped(KeyEvent e) {}
     @Override public void mouseClicked(MouseEvent e) {}
     @Override public void mouseReleased(MouseEvent e) {}
