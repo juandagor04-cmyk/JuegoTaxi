@@ -156,8 +156,7 @@ public class Menu extends JFrame implements ActionListener {
 
     public static void main(String[] args) {
         // Datos de prueba iniciales
-        registroPuntos.put("PEPE", 1500);
-        registroPuntos.put("LUCHO", 2300);
+
 
         SwingUtilities.invokeLater(() -> new Menu().setVisible(true));
     }
